@@ -1,7 +1,8 @@
 from typing import Any
 from pydantic import BaseModel, Field
 
-SUPPORTED_LANGUAGES = ['Go', 'Python', 'Dockerfile', 'Java', 'TypeScript', 'JavaScript']
+SUPPORTED_LANGUAGES = ['Go', 'Python', 'Dockerfile',
+                       'Java', 'TypeScript', 'JavaScript']
 
 
 class SourceInfo(BaseModel):
@@ -12,17 +13,27 @@ class SourceInfo(BaseModel):
     exclude: list[str] | None = None
 
 
-class SbomInfo(BaseModel):
-    type: str = Field(serialization_alias='_type')
+class JsonSbomInfo(BaseModel):
+    type: str = Field(serialization_alias='_type', default="json")
     format: str
     content: dict
+
+
+class SbomPackage(BaseModel):
+    name: str
+    version: str
+
+
+class ManualSbomInfo(BaseModel):
+    type: str = Field(serialization_alias='_type', default="manual")
+    packages: list[SbomPackage]
 
 
 class Image(BaseModel):
     name: str
     tag: str
     source_info: list[SourceInfo]
-    sbom_info: SbomInfo
+    sbom_info: JsonSbomInfo | ManualSbomInfo
 
 
 class Vuln(BaseModel):

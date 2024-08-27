@@ -1,6 +1,6 @@
 import streamlit as st
 
-from utils.client_model import SUPPORTED_LANGUAGES, Image, InputRequest, SbomInfo, Scan, SourceInfo, Vuln
+from utils.client_model import SUPPORTED_LANGUAGES, Image, InputRequest, JsonSbomInfo, ManualSbomInfo, SbomPackage, Scan, SourceInfo, Vuln
 from utils.sbom_tools import SbomInput
 
 
@@ -170,8 +170,23 @@ def __build_excludes(languages: list[str]) -> list[str]:
     return excludes
 
 
-def build_image_from_sbom(sbom: SbomInput) -> Image:
-    sbom_info = SbomInfo(type='json', format='cyclonedx+json', content=sbom.sbom)
+def __sbom_to_csv(sbom: dict) -> list[SbomPackage]:
+    pkgs = []
+    for component in sbom['components']:
+        name = component['name']
+        version = component['version']
+        pkgs.append(SbomPackage(name=name, version=version))
+    return pkgs
+
+
+def build_image_from_sbom(sbom: SbomInput, input_format: str) -> Image:
+    if input_format == 'JSON':
+        sbom_info = JsonSbomInfo(
+            format='cyclonedx+json', content=sbom.sbom)
+    else:
+        sbom_info = ManualSbomInfo(
+            packages=__sbom_to_csv(sbom.sbom))
+
     sources = [SourceInfo(type='code', git_repo=sbom.repo_ref.ref, commit_id=sbom.repo_ref.commit_id,
                           include=__build_includes(sbom.repo_ref.languages),
                           exclude=__build_excludes(sbom.repo_ref.languages)),
@@ -184,10 +199,11 @@ def build_input() -> InputRequest:
     sbom: SbomInput = st.session_state.sbom
     cves_text = st.session_state.cves
     st.session_state['morpheus_waiting'] = True
-
+    input_format = st.session_state.input_format
     cves = [cve.strip() for cve in cves_text.split(',')]
     scan = Scan(vulns=[Vuln(vuln_id=cve) for cve in cves])
-    input_data = InputRequest(image=build_image_from_sbom(sbom), scan=scan)
+    input_data = InputRequest(
+        image=build_image_from_sbom(sbom, input_format), scan=scan)
     return input_data
 
 
