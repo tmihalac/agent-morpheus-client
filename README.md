@@ -23,7 +23,7 @@ streamlit run morpheus_client.py
 ## Run the container image
 
 ```bash
-podman run --name=morpheus-client --rm -v ./data:/data:z -p 8080:8080 -e MORPHEUS_URL=http://agent-morpheus/scan quay.io/ruben/morpheus-client:latest
+podman run --name=morpheus-client --rm -v ./data:/data:z -p 8080:8080 -e MORPHEUS_URL=http://agent-morpheus/scan quay.io/ecosystem-appeng/agent-morpheus-client:latest
 ```
 
 ## Run on OpenShift
