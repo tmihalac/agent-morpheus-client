@@ -2,11 +2,11 @@ import requests
 
 from utils.client_model import SUPPORTED_LANGUAGES
 
-template = 'https://api.github.com/repos/{repo_name}/languages'
+template = 'https://api.github.com/repos/{git_repo}/languages'
 
 
-def get_languages(repo_name: str) -> list[str]:
-    response = requests.get(template.format(repo_name=repo_name))
+def get_languages(git_repo: str) -> list[str]:
+    response = requests.get(template.format(git_repo=git_repo))
     if response.ok:
         languages = response.json()
         known_languages = []
