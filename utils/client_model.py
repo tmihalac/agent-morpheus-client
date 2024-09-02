@@ -8,7 +8,7 @@ SUPPORTED_LANGUAGES = ['Go', 'Python', 'Dockerfile',
 class SourceInfo(BaseModel):
     type: str
     git_repo: str
-    commit_id: str
+    ref: str
     include: list[str]
     exclude: list[str] | None = None
 

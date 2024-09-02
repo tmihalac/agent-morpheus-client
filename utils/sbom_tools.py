@@ -3,15 +3,15 @@ from utils.github_tools import get_languages
 
 
 class GitRepoRef(BaseModel):
+    name: str
     ref: str
-    commit_id: str
     languages: list[str]
 
 
 class SbomInput(BaseModel):
     name: str
     tag: str
-    repo_ref: GitRepoRef
+    git_repo: GitRepoRef
     sbom: dict
 
 
@@ -26,9 +26,9 @@ def parse_sbom(sbom) -> SbomInput:
     name = sbom['metadata']['component']['name']
     tag = sbom['metadata']['component']['version']
     props = sbom['metadata']['properties']
-    repo_ref = __get_property(props, 'syft:image:labels:io.openshift.build.source-location')
+    git_repo = __get_property(props, 'syft:image:labels:io.openshift.build.source-location')
     commit_url = __get_property(props, 'syft:image:labels:io.openshift.build.commit.url')
     commit_id = commit_url.split('/')[-1]
-    languages = get_languages(repo_ref.removeprefix('https://github.com/').replace('.git', ''))
+    languages = get_languages(git_repo.removeprefix('https://github.com/').replace('.git', ''))
     return SbomInput(name=name, tag=tag, sbom=sbom,
-                     repo_ref=GitRepoRef(ref=repo_ref, commit_id=commit_id, languages=languages))
+                     git_repo=GitRepoRef(name=git_repo, ref=commit_id, languages=languages))

@@ -187,10 +187,10 @@ def build_image_from_sbom(sbom: SbomInput, input_format: str) -> Image:
         sbom_info = ManualSbomInfo(
             packages=__sbom_to_csv(sbom.sbom))
 
-    sources = [SourceInfo(type='code', git_repo=sbom.repo_ref.ref, commit_id=sbom.repo_ref.commit_id,
-                          include=__build_includes(sbom.repo_ref.languages),
-                          exclude=__build_excludes(sbom.repo_ref.languages)),
-               SourceInfo(type='doc', git_repo=sbom.repo_ref.ref, commit_id=sbom.repo_ref.commit_id,
+    sources = [SourceInfo(type='code', git_repo=sbom.git_repo.name, ref=sbom.git_repo.ref,
+                          include=__build_includes(sbom.git_repo.languages),
+                          exclude=__build_excludes(sbom.git_repo.languages)),
+               SourceInfo(type='doc', git_repo=sbom.git_repo.name, ref=sbom.git_repo.ref,
                           include=__get_includes('Docs'), exclude=__get_excludes('Docs'))]
     return Image(name=sbom.name, tag=sbom.tag, source_info=sources, sbom_info=sbom_info)
 
@@ -215,10 +215,10 @@ def print_input_data(col):
         col.markdown(f"""
 - Name: {sbom.name}
 - Tag: {sbom.tag}
-- Source Ref: [{sbom.repo_ref.ref}@{sbom.repo_ref.commit_id}]({sbom.repo_ref.ref}/tree/{sbom.repo_ref.commit_id})
+- Source Ref: [{sbom.git_repo.name}@{sbom.git_repo.ref}]({sbom.git_repo.ref}/tree/{sbom.git_repo.ref})
 """)
-        st.session_state.sbom.repo_ref.languages = col.multiselect(
+        st.session_state.sbom.git_repo.languages = col.multiselect(
             "Select the programming languages to use in the includes/excludes:", SUPPORTED_LANGUAGES,
-            sbom.repo_ref.languages)
+            sbom.git_repo.languages)
     else:
         col.text('Load an SBOM to show the input data')
