@@ -215,7 +215,7 @@ def print_input_data(col):
         col.markdown(f"""
 - Name: {sbom.name}
 - Tag: {sbom.tag}
-- Source Ref: [{sbom.git_repo.name}@{sbom.git_repo.ref}]({sbom.git_repo.ref}/tree/{sbom.git_repo.ref})
+- Source Ref: [{sbom.git_repo.name}@{sbom.git_repo.ref}]({sbom.git_repo.name}/tree/{sbom.git_repo.ref})
 """)
         st.session_state.sbom.git_repo.languages = col.multiselect(
             "Select the programming languages to use in the includes/excludes:", SUPPORTED_LANGUAGES,
