@@ -22,6 +22,7 @@ class JsonSbomInfo(BaseModel):
 class SbomPackage(BaseModel):
     name: str
     version: str
+    purl: str | None = None
 
 
 class ManualSbomInfo(BaseModel):
