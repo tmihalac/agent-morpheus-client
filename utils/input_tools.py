@@ -175,7 +175,10 @@ def __sbom_to_csv(sbom: dict) -> list[SbomPackage]:
     for component in sbom['components']:
         name = component['name']
         version = component['version']
-        pkgs.append(SbomPackage(name=name, version=version))
+        if 'purl' in component:
+          purl = component['purl']
+
+        pkgs.append(SbomPackage(name=name, version=version, purl=purl))
     return pkgs
 
 
