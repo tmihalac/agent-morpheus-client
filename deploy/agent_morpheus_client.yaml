@@ -33,7 +33,13 @@ spec:
               value: http://agent-morpheus:8080/scan
             - name: CALLBACK_PORT
               value: "8081"
-
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: agent-morpheus-client-data
 ---
 apiVersion: v1
 kind: Service
@@ -64,3 +70,14 @@ spec:
   to:
     kind: Service
     name: agent-morpheus-client
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: agent-morpheus-client-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Mi

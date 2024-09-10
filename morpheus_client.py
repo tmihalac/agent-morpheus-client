@@ -18,10 +18,12 @@ if not os.path.isdir(data_dir):
 if 'callback' not in st.session_state:
     st.session_state.callback = {}
 
+def get_output_path() -> Path:
+    return Path(data_dir, 'output.json')
 
 def on_receive_callback(data):
     st.session_state['morpheus_waiting'] = False
-    output_path = Path(data_dir, 'output.json')
+    output_path = get_output_path()
     # If file exists from previous invocation, must delete it so new json output file will be saved correctly.
     if os.path.exists(output_path):
         os.remove(output_path)
@@ -30,7 +32,7 @@ def on_receive_callback(data):
 
 
 def print_output():
-    callback_file = Path(data_dir, 'output.json')
+    callback_file = get_output_path()
     if callback_file.is_file():
         with open(callback_file, 'r') as f:
             st.header('Evaluation result')
