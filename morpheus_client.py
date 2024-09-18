@@ -30,7 +30,6 @@ def on_receive_callback(data):
     with open(output_path, 'w') as f:
         json.dump(data, f)
 
-
 def print_output():
     callback_file = get_output_path()
     if callback_file.is_file():
@@ -41,7 +40,10 @@ def print_output():
             for item in items:
                 with st.expander(item[0], expanded=True):
                     st.markdown(item[1])
-            st.download_button(label='Download', type='primary', data=json.dumps(data), file_name='output.json')
+            image = data['input']['image']['name'].split('/')[-1]
+            tag = data['input']['image']['tag']
+            file_name = f"{image}:{tag}-output.json"
+            st.download_button(label='Download', type='primary', data=json.dumps(data), file_name=file_name)
 
 
 callback_server = HttpCallback()
@@ -125,7 +127,15 @@ update_file()
 st.session_state.input_format=main_col.selectbox(label='Input format', options=['JSON', 'CSV'], index=1)
 main_col.button('Send to Morpheus', on_click=send_to_morpheus, type='primary',
                 disabled=is_running() or not st.session_state['data_ready'])
-main_col.download_button('Save Morpheus Input', type='secondary', file_name='input.json',
+
+def get_input_filename():
+    if 'sbom' not in st.session_state:
+        return 'input.json'
+    name = st.session_state.sbom.name.removeprefix("registry.redhat.io/").replace("/", "_")
+    tag = st.session_state.sbom.tag
+    return f"{name}:{tag}-input.json"
+
+main_col.download_button('Save Morpheus Input', type='secondary', file_name=get_input_filename(),
                          disabled=not st.session_state['data_ready'], data=save_file())
 
 print_input_data(helper_col)
