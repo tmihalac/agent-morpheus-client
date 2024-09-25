@@ -1,3 +1,4 @@
+import uuid
 import streamlit as st
 
 from utils.client_model import SUPPORTED_LANGUAGES, Image, InputRequest, JsonSbomInfo, ManualSbomInfo, SbomPackage, Scan, SourceInfo, Vuln
@@ -182,6 +183,13 @@ def __sbom_to_csv(sbom: dict) -> list[SbomPackage]:
     return pkgs
 
 
+def generate_id():
+    if 'sbom' not in st.session_state:
+        return uuid.uuid4()
+    name = st.session_state.sbom.name.removeprefix("registry.redhat.io/").replace("/", "_")
+    tag = st.session_state.sbom.tag
+    return f"{name}:{tag}"
+
 def build_image_from_sbom(sbom: SbomInput, input_format: str) -> Image:
     if input_format == 'JSON':
         sbom_info = JsonSbomInfo(
@@ -197,14 +205,22 @@ def build_image_from_sbom(sbom: SbomInput, input_format: str) -> Image:
                           include=__get_includes('Docs'), exclude=__get_excludes('Docs'))]
     return Image(name=sbom.name, tag=sbom.tag, source_info=sources, sbom_info=sbom_info)
 
+def update_id():
+    if st.session_state['id'] == '' and 'sbom' in st.session_state:
+        st.session_state['id'] = generate_id()
 
 def build_input() -> InputRequest:
+    if 'sbom' not in st.session_state:
+        return ""
     sbom: SbomInput = st.session_state.sbom
     cves_text = st.session_state.cves
     st.session_state['morpheus_waiting'] = True
     input_format = st.session_state.input_format
     cves = [cve.strip() for cve in cves_text.split(',')]
-    scan = Scan(vulns=[Vuln(vuln_id=cve) for cve in cves])
+    
+    if st.session_state['id']== '':
+        st.session_state['id'] = generate_id()
+    scan = Scan(id=st.session_state['id'], vulns=[Vuln(vuln_id=cve) for cve in cves])
     input_data = InputRequest(
         image=build_image_from_sbom(sbom, input_format), scan=scan)
     return input_data
