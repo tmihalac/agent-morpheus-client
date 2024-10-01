@@ -7,7 +7,7 @@ from pathlib import Path
 from utils.sbom_tools import parse_sbom
 from callback.http_callback import HttpCallback
 from utils.output_tools import generate_markdown
-from utils.input_tools import build_input, print_input_data
+from utils.input_tools import build_input, generate_id, print_input_data, update_id
 
 st.set_page_config(page_title='Morpheus Client', layout='wide')
 
@@ -40,9 +40,8 @@ def print_output():
             for item in items:
                 with st.expander(item[0], expanded=True):
                     st.markdown(item[1])
-            image = data['input']['image']['name'].split('/')[-1]
-            tag = data['input']['image']['tag']
-            file_name = f"{image}:{tag}-output.json"
+            id = data['input']['scan']['id']
+            file_name = f"{id}-output.json"
             st.download_button(label='Download', type='primary', data=json.dumps(data), file_name=file_name)
 
 
@@ -94,6 +93,7 @@ def update_file():
                 st.session_state.sbom = sbom
                 st.session_state['git_loading'] = False
                 set_data_ready()
+                update_id()
             except Exception as exc:
                 main_col.error(repr(exc))
 
@@ -116,9 +116,15 @@ def save_file():
     else:
         return ""
 
-
 main_col, helper_col = st.columns([2, 5])
 main_col.header("Build Morpheus Request")
+
+if 'id' not in st.session_state:
+    st.session_state['id'] = ''
+manual_id = main_col.text_input(label='ID', value=st.session_state['id'])
+if manual_id and manual_id != st.session_state['id']:
+    st.session_state['id'] = manual_id
+    update_file()
 
 st.session_state.cves = main_col.text_input(label='CVEs', placeholder='CVE-2024-27304, CVE-2024-2961, ...',
                                             value='CVE-2024-27304', on_change=set_data_ready)
@@ -129,11 +135,10 @@ main_col.button('Send to Morpheus', on_click=send_to_morpheus, type='primary',
                 disabled=is_running() or not st.session_state['data_ready'])
 
 def get_input_filename():
-    if 'sbom' not in st.session_state:
-        return 'input.json'
-    name = st.session_state.sbom.name.removeprefix("registry.redhat.io/").replace("/", "_")
-    tag = st.session_state.sbom.tag
-    return f"{name}:{tag}-input.json"
+    if 'sbom' not in st.session_state or st.session_state['id'] == '':
+        return "input.json"
+    id = st.session_state['id']
+    return f"{id}-input.json"
 
 main_col.download_button('Save Morpheus Input', type='secondary', file_name=get_input_filename(),
                          disabled=not st.session_state['data_ready'], data=save_file())

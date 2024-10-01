@@ -42,6 +42,7 @@ class Vuln(BaseModel):
 
 
 class Scan(BaseModel):
+    id: str | None = None
     vulns: list[Vuln]
 
 
