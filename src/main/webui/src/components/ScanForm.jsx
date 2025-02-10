@@ -8,7 +8,7 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
   const [id, setId] = React.useState(vulnRequest['id'] || '');
   const [cves, setCves] = React.useState(vulnRequest['cves'] || [{}]);
   const [sbom, setSbom] = React.useState(vulnRequest['sbom'] || {});
-  const [metadata, setMetadata] = React.useState(vulnRequest['metadata'] || [{}]);
+  const [metadata, setMetadata] = React.useState(vulnRequest['metadata'] || []);
   const [sbomType, setSbomType] = React.useState(vulnRequest['sbomType'] || 'manual');
   const [filename, setFilename] = React.useState(vulnRequest['filename'] || '');
   const [isLoading, setIsLoading] = React.useState(false);

@@ -49,7 +49,9 @@ public class ReportService {
 
   private static final String COMMIT_ID_PROPERTY = "syft:image:labels:io.openshift.build.commit.id";
   private static final String SOURCE_LOCATION_PROPERTY = "syft:image:labels:io.openshift.build.source-location";
-  private static final String PACKAGE_TYPE = "syft:package:type";
+  private static final String PACKAGE_TYPE_PROPERTY = "syft:package:type";
+  private static final String LIBRARY_TYPE = "library";
+  private static final Object OPERATING_SYSTEM_TYPE = "operating-system";
 
   @RestClient
   GitHubService gitHubService;
@@ -198,8 +200,8 @@ public class ReportService {
     var allExcludes = languages.stream().map(excludes::get).filter(Objects::nonNull).flatMap(Collection::stream)
         .toList();
     var srcInfo = List.of(
-        new SourceInfo("code", sourceLocation, commitId, allIncludes, allExcludes),
-        new SourceInfo("doc", sourceLocation, commitId, includes.get("Docs"), Collections.emptyList()));
+        new SourceInfo("git", "code", sourceLocation, commitId, allIncludes, allExcludes),
+        new SourceInfo("git", "doc", sourceLocation, commitId, includes.get("Docs"), Collections.emptyList()));
     var sbomInfo = buildSbomInfo(request);
     return new Image(name, tag, srcInfo, sbomInfo);
   }
@@ -209,13 +211,12 @@ public class ReportService {
     sbomInfo.put("_type", request.sbomInfoType().toString());
     switch (request.sbomInfoType()) {
       case CYCLONEDX_JSON:
-        sbomInfo.set("sbom", request.sbom());
-        break;
+        throw new IllegalArgumentException("The Agent Morpheus Backend does not yet support cyclonedx+json");
       case MANUAL:
         sbomInfo.set("packages", buildManualSbom(request.sbom()));
         break;
       default:
-        throw new IllegalArgumentException("The sbom_info_type must be cyclonedx+json or manual");
+        throw new IllegalArgumentException("The sbom_info_type must be manual");
     }
     return sbomInfo;
   }
@@ -223,12 +224,19 @@ public class ReportService {
   public JsonNode buildManualSbom(JsonNode sbom) {
     ArrayNode packages = objectMapper.createArrayNode();
     sbom.get("components").forEach(c -> {
-      var pkg = objectMapper.createObjectNode();
-      pkg.put("name", getProperty(c, "name"));
-      pkg.put("version", getProperty(c, "version"));
-      pkg.put("purl", getProperty(c, "purl"));
-      pkg.put("system", getComponentProperty(c.withArray("properties")));
-      packages.add(pkg);
+      var pkgType = getProperty(c, "type");
+      if (!LIBRARY_TYPE.equals(pkgType) && !OPERATING_SYSTEM_TYPE.equals(pkgType)) {
+        var pkg = objectMapper.createObjectNode();
+        pkg.put("name", getProperty(c, "name"));
+        pkg.put("version", getProperty(c, "version"));
+        pkg.put("purl", getProperty(c, "purl"));
+        var system = getComponentProperty(c.withArray("properties"));
+        if (system != null) {
+          pkg.put("system", system);
+        }
+        packages.add(pkg);
+      }
+
     });
     return packages;
   }
@@ -241,12 +249,17 @@ public class ReportService {
   }
 
   private String getComponentProperty(ArrayNode properties) {
+    if (properties == null) {
+      return null;
+    }
     var it = properties.iterator();
     while (it.hasNext()) {
       var p = it.next();
-      if (PACKAGE_TYPE.equalsIgnoreCase(getProperty(p, "name"))) {
+      if (PACKAGE_TYPE_PROPERTY.equalsIgnoreCase(getProperty(p, "name"))) {
         var value = getProperty(p, "value");
         switch (value) {
+          case null:
+            return null;
           case "go-module":
             return "golang";
           case "java-archive":

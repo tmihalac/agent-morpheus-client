@@ -27,6 +27,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.Response.Status;
 
 @Path("/reports")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -56,6 +57,8 @@ public class ReportEndpoint {
     try {
       var id = reportService.submit(request);
       return Response.accepted(objectMapper.createObjectNode().put("id", id)).build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build();
     } catch (Exception e) {
       LOGGER.error("Unable to submit new analysis request", e);
       return Response.serverError().entity(objectMapper.createObjectNode().put("error", e.getMessage())).build();

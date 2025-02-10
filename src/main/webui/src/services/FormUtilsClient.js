@@ -10,7 +10,7 @@ export const sbomTypes = [
   {
     value: CYCLONEDX_SBOM,
     label: 'CycloneDX (JSON)',
-    disabled: false
+    disabled: true
   }
 ];
 
