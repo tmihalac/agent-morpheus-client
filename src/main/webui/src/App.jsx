@@ -36,7 +36,13 @@ export default function App() {
         addAlert('Error', 'Error received', <p>Error: {data.result}</p>);
       }
     });
-    getUserInfo().then(userInfo => setUserName(userInfo.metadata.name));
+    getUserInfo().then(userInfo => {
+      if(userInfo.metadata === undefined) {
+        setUserName("Anonymous");
+      } else {
+        setUserName(userInfo.metadata?.name);
+      }
+    });
 
   }, []);
 
@@ -66,7 +72,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    logoutUser().then(() => window.location.replace("/app"));
+    logoutUser().then(() => window.location.replace("/app/index.html"));
   }
 
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
