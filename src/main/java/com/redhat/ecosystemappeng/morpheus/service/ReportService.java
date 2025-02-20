@@ -19,12 +19,11 @@ import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.redhat.ecosystemappeng.morpheus.client.GitHubService;
-import com.redhat.ecosystemappeng.morpheus.client.MorpheusService;
 import com.redhat.ecosystemappeng.morpheus.model.PaginatedResult;
 import com.redhat.ecosystemappeng.morpheus.model.Pagination;
 import com.redhat.ecosystemappeng.morpheus.model.Report;
@@ -61,8 +60,8 @@ public class ReportService {
   @Inject
   ReportRepositoryService repository;
 
-  @RestClient
-  MorpheusService morpheusService;
+  @Inject
+  RequestQueueService queueService;
 
   @ConfigProperty(name = "morpheus-ui.includes.path", defaultValue = "includes.json")
   String includesPath;
@@ -103,14 +102,28 @@ public class ReportService {
   }
 
   public String get(String id) {
+    LOGGER.debugf("Get report %s", id);
     return repository.findById(id);
   }
 
   public boolean remove(String id) {
+    LOGGER.debugf("Remove report %s", id);
     return repository.remove(id);
   }
 
-  public ReportRequestId save(String report) {
+  public boolean retry(String id) throws JsonProcessingException {
+    var report = get(id);
+    if(report == null) {
+      return false;
+    }
+    repository.setAsRetried(id, getUser());
+    LOGGER.debugf("Retry report %s", id);
+    queueService.queue(id, objectMapper.readTree(report));
+
+    return true;
+  }
+
+  public ReportRequestId receive(String report) {
     String scanId = null;
     String id = null;
     try {
@@ -142,6 +155,7 @@ public class ReportService {
       for (String existingId : existing) {
         var event = new ReportReceivedEvent(existingId, scanId, "Completed");
         notificationSocket.onMessage(objectMapper.writeValueAsString(event));
+        queueService.received(existingId);
       }
     } catch (IOException e) {
       LOGGER.warn("Unable to process received report", e);
@@ -156,9 +170,11 @@ public class ReportService {
   }
 
   public ReportRequestId submit(ReportRequest request) throws JsonProcessingException, IOException {
-    var id = request.id();
-    if (id == null) {
-      id = UUID.randomUUID().toString();
+    var scanId = request.id();
+    if (scanId == null) {
+      scanId = UUID.randomUUID().toString();
+    } else {
+
     }
     var scan = buildScan(request);
     var image = buildImage(request);
@@ -166,22 +182,11 @@ public class ReportService {
 
     var report = objectMapper.createObjectNode();
     report.set("input", objectMapper.convertValue(input, JsonNode.class));
-    var metadata = objectMapper.createObjectNode().put("user", getUser());
-    if (request.metadata() != null) {
-      request.metadata().entrySet().forEach(e -> metadata.put(e.getKey(), e.getValue()));
-    }
-    report.set("metadata", metadata);
 
-    try {
-      morpheusService.submit(objectMapper.writeValueAsString(input));
-      var created = repository.save(report.toPrettyString());
-      return new ReportRequestId(created.id(), scan.id());
-    } catch (JsonProcessingException e) {
-      ObjectNode obj = (ObjectNode) report.get("input").get("scan");
-      obj.set("error", objectMapper.createObjectNode().put("type", "ProcessingError").put("message", e.getMessage()));
-      var created = repository.save(report.toPrettyString());
-      return new ReportRequestId(created.id(), scan.id());
-    }
+    var created = repository.save(report.toPrettyString());
+    repository.setAsSubmitted(created.id(), getUser());
+    queueService.queue(created.id(), report);
+    return new ReportRequestId(created.id(), scan.id());
   }
 
   private String getUser() {
