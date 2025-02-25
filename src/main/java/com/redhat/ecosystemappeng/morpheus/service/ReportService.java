@@ -3,12 +3,15 @@ package com.redhat.ecosystemappeng.morpheus.service;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -19,7 +22,6 @@ import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -39,6 +41,7 @@ import com.redhat.ecosystemappeng.morpheus.model.morpheus.VulnId;
 import com.redhat.ecosystemappeng.morpheus.rest.NotificationSocket;
 
 import io.quarkus.oidc.UserInfo;
+import io.quarkus.scheduler.Scheduler;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -78,13 +81,28 @@ public class ReportService {
   @Inject
   UserInfo userInfo;
 
+
+  @Inject
+  Scheduler scheduler;
+
   private Map<String, Collection<String>> includes;
   private Map<String, Collection<String>> excludes;
+
+  @ConfigProperty(name = "morpheus.purge.cron")
+  Optional<String> purgeCron;
+
+  @ConfigProperty(name = "morpheus.purge.after", defaultValue = "7d")
+  Duration purgeAfter;
 
   @PostConstruct
   void loadConfig() throws FileNotFoundException, IOException {
     includes = getMappingConfig(includesPath);
     excludes = getMappingConfig(excludesPath);
+    if(purgeCron.isPresent()) {
+      scheduler.newJob("purge_job").setCron(purgeCron.get()).setTask(executionContext -> {
+        repository.removeBefore(Instant.now().minus(purgeAfter));
+      }).schedule();
+    }
   }
 
   private Map<String, Collection<String>> getMappingConfig(String path) throws IOException {
@@ -109,6 +127,16 @@ public class ReportService {
   public boolean remove(String id) {
     LOGGER.debugf("Remove report %s", id);
     return repository.remove(id);
+  }
+
+  public boolean remove(Collection<String> ids) {
+    LOGGER.debugf("Remove reports %s", ids);
+    return repository.remove(ids);
+  }
+  
+  public boolean remove(Map<String, String> query) {
+    LOGGER.debugf("Remove reports with filter: %s", query);
+    return repository.remove(query);
   }
 
   public boolean retry(String id) throws JsonProcessingException {
@@ -173,8 +201,6 @@ public class ReportService {
     var scanId = request.id();
     if (scanId == null) {
       scanId = UUID.randomUUID().toString();
-    } else {
-
     }
     var scan = buildScan(request);
     var image = buildImage(request);
@@ -182,7 +208,7 @@ public class ReportService {
 
     var report = objectMapper.createObjectNode();
     report.set("input", objectMapper.convertValue(input, JsonNode.class));
-
+    report.set("metadata", objectMapper.convertValue(request.metadata(), JsonNode.class));
     var created = repository.save(report.toPrettyString());
     repository.setAsSubmitted(created.id(), getUser());
     queueService.queue(created.id(), report);
