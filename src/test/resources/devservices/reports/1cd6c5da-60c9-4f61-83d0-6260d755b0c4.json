@@ -31,7 +31,7 @@
           "source_type": "code",
           "git_repo": "https://github.com/openshift/kubernetes-metrics-server",
           "ref": "bcbf241cece8ef455be32a910f1570bae827b4a1",
-          "includes": [
+          "include": [
             "**/*.go",
             "Dockerfile*",
             "docker-compose.yml",
@@ -59,7 +59,7 @@
           "source_type": "doc",
           "git_repo": "https://github.com/openshift/kubernetes-metrics-server",
           "ref": "bcbf241cece8ef455be32a910f1570bae827b4a1",
-          "includes": [
+          "include": [
             "**/*.md",
             "docs/**/*.rst"
           ],

@@ -31,7 +31,7 @@
           "source_type": "code",
           "git_repo": "https://github.com/openshift/console",
           "ref": "f6f61ca06f008ead018f37668f9fa391e668e703",
-          "includes": [
+          "include": [
             "**/*.ts",
             "**/*.tsx",
             "tsconfig.json",
@@ -110,7 +110,7 @@
           "source_type": "doc",
           "git_repo": "https://github.com/openshift/console",
           "ref": "f6f61ca06f008ead018f37668f9fa391e668e703",
-          "includes": [
+          "include": [
             "**/*.md",
             "docs/**/*.rst"
           ],
