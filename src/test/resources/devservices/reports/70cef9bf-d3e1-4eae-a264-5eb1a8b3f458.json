@@ -31,7 +31,7 @@
           "source_type": "code",
           "git_repo": "https://github.com/openshift/openshift-controller-manager",
           "ref": "5dcfc990b109d9ae1d8b900655a928c6d859b584",
-          "includes": [
+          "include": [
             "**/*.go"
           ],
           "excludes": [
@@ -46,7 +46,7 @@
           "source_type": "doc",
           "git_repo": "https://github.com/openshift/openshift-controller-manager",
           "ref": "5dcfc990b109d9ae1d8b900655a928c6d859b584",
-          "includes": [
+          "include": [
             "**/*.md",
             "docs/**/*.rst"
           ],

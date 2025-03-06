@@ -31,7 +31,7 @@
           "source_type": "code",
           "git_repo": "https://github.com/openshift/oc-mirror",
           "ref": "a0733c17322f96d14f9158604fe74f1bfecc4a53",
-          "includes": [
+          "include": [
             "**/*.go",
             "**/*.py",
             "pyproject.toml",
@@ -79,7 +79,7 @@
           "source_type": "doc",
           "git_repo": "https://github.com/openshift/oc-mirror",
           "ref": "a0733c17322f96d14f9158604fe74f1bfecc4a53",
-          "includes": [
+          "include": [
             "**/*.md",
             "docs/**/*.rst"
           ],
