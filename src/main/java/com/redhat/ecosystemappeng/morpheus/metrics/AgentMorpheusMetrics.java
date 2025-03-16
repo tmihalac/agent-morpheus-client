@@ -62,7 +62,7 @@ public class AgentMorpheusMetrics {
 public Gauge rateOfSuccessfulReports() {
         return Gauge.builder("morpheus_rate_of_successful_reports",
                              () -> agentMorpheusBusinessInsights.calculateRateOfSuccessfulReports())
-                    .description("rate of reports with state of completed or not failed/unknown  state=%s")
+                    .description("rate of reports with state of completed or not failed/unknown")
                     .tag("type", "business")
                     .register(this.registry);
     }
@@ -72,7 +72,7 @@ public Gauge rateOfSuccessfulReports() {
 public Gauge rateOfSuccessfulResults() {
         return Gauge.builder("morpheus_rate_of_successful_results",
                              () -> agentMorpheusBusinessInsights.calculateRateOfSuccessfulResults())
-                    .description("rate of reports with a concrete result of analysis , not uncertain or insufficient_intel")
+                    .description("rate of reports with a concrete positive result of analysis , not uncertain or insufficient_intel")
                     .tag("type", "business")
                     .register(this.registry);
     }
