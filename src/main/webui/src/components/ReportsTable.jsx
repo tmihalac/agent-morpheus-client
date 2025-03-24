@@ -153,6 +153,7 @@ export default function ReportsTable() {
   const statusFilter = {
     any: "Any",
     completed: "Completed",
+    expired: "Expired",
     failed: "Failed",
     queued: "Queued",
     sent: "Sent"
