@@ -1,5 +1,6 @@
 import { Label } from "@patternfly/react-core"
 import InfoCircleIcon from '@patternfly/react-icons/dist/esm/icons/info-circle-icon';
+import OutlinedClockIcon from '@patternfly/react-icons/dist/esm/icons/outlined-clock-icon';
 
 export const StatusLabel = ({type}) => {
   const msg = String(type).charAt(0).toUpperCase() + String(type).slice(1);
@@ -8,6 +9,7 @@ export const StatusLabel = ({type}) => {
     case "failed": return <Label status="danger">{msg}</Label>
     case "queued": return <Label icon={<InfoCircleIcon />} color="yellow">{msg}</Label>
     case "sent": return <Label status="info">{msg}</Label>
+    case "expired": return <Label color="purple" icon={<OutlinedClockIcon />}>{msg}</Label>;
     default: return <Label color="grey">{msg}</Label>
   }
   

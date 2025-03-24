@@ -55,7 +55,8 @@ public class ReportRepositoryService {
           Filters.eq("input.scan.completed_at", null)),
       "failed", Filters.ne("error", null),
       "queued", Filters.and(Filters.ne("metadata." + SUBMITTED_AT, null), Filters.eq("metadata." + SENT_AT, null),
-          Filters.eq("error", null), Filters.eq("input.scan.completed_at", null)));
+          Filters.eq("error", null), Filters.eq("input.scan.completed_at", null)),
+      "expired", Filters.and(Filters.ne("error", null),Filters.eq("error.type", "expired")));;
 
   @Inject
   MongoClient mongoClient;
@@ -121,7 +122,7 @@ public class ReportRepositoryService {
   private String getStatus(Document doc, Map<String, String> metadata) {
     if (doc.containsKey("error")) {
       var error = doc.get("error", Document.class);
-      if (error.getString("type").equals("timeout")) {
+      if (error.getString("type").equals("expired")) {
         return "expired";
       }
       return "failed";
