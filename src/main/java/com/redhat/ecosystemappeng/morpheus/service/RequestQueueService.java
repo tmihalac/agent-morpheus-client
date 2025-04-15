@@ -101,7 +101,10 @@ public class RequestQueueService {
 
   private void moveToActive() {
 
-
+    // prevent thread blocked exceptions and a lot of ) Polled null from the pending queue messages.
+    while (pending.size() > 0 && active.size() < maxActive) {
+      submitOneReportFromQueue();
+    }
   }
 
   private void submitOneReportFromQueue() {
