@@ -19,6 +19,7 @@ import java.util.List;
 public class TracingFieldsCustomizer implements TextMapPropagatorCustomizer {
 
     public static final String TRACE_ID = "traceId";
+    public static final String SPAN_ID = "spanId";
     public static ContextKey<String> getTraceIdContextKey() {
         return TextMapPropagatorImpl.TRACE_ID_CONTEXT_KEY;
     }
