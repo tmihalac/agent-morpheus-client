@@ -17,7 +17,7 @@ export default function ReportsTable() {
   const { addAlert } = useOutletContext();
   const [reports, setReports] = React.useState([]);
   const [activeSortDirection, setActiveSortDirection] = React.useState('desc');
-  const [activeSortIndex, setActiveSortIndex] = React.useState(2); // Completed At
+  const [activeSortIndex, setActiveSortIndex] = React.useState(3); // Submitted At
   const [page, setPage] = React.useState(1);
   const [perPage, setPerPage] = React.useState(20);
   const [totalElements, setTotalElements] = React.useState(0);
@@ -163,6 +163,7 @@ export default function ReportsTable() {
     { key: 'name', label: 'ID' },
     { key: 'vulns', label: 'CVEs' },
     { key: 'completedAt', label: 'Completed At' },
+    { key: 'submittedAt', label: 'Submitted At' },
     { key: 'state', label: 'State' }
   ];
 
@@ -208,7 +209,8 @@ export default function ReportsTable() {
         </Link><JustificationBanner justification={vuln.justification} /></div>
         })}</Td>
         <Td dataLabel={columnNames[2].label} modifier="nowrap">{r.completedAt ? r.completedAt : '-'}</Td>
-        <Td dataLabel={columnNames[3].label}><StatusLabel type={r.state} /></Td>
+        <Td dataLabel={columnNames[3].label} modifier="nowrap">{r.metadata?.submitted_at || '-'}</Td>
+        <Td dataLabel={columnNames[4].label}><StatusLabel type={r.state} /></Td>
         <Td dataLabel="Actions">
           <Flex columnGap={{ default: 'columnGapSm' }}>
             <Tooltip content="Submit again the report to Morpheus">
@@ -264,7 +266,8 @@ export default function ReportsTable() {
           <Th width={20} sort={getSortParams(0)}>{columnNames[0].label}</Th>
           <Th width={10}>{columnNames[1].label}</Th>
           <Th width={10} sort={getSortParams(2)}>{columnNames[2].label}</Th>
-          <Th>{columnNames[3].label}</Th>
+          <Th width={10} sort={getSortParams(3)}>{columnNames[3].label}</Th>
+          <Th>{columnNames[4].label}</Th>
           <Td>Actions</Td>
         </Tr>
       </Thead>

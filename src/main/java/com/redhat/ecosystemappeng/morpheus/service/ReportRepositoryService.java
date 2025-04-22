@@ -216,6 +216,7 @@ public class ReportRepositoryService {
 
   private static final Map<String, String> SORT_MAPPINGS = Map.of(
       "completedAt", "input.scan.completed_at",
+      "submittedAt", "metadata.submitted_at",
       "name", "input.scan.id",
       "vuln_id", "output.vuln_id");
 
@@ -233,7 +234,7 @@ public class ReportRepositoryService {
         sorts.add(Sorts.descending(fieldName));
       }
     });
-
+    
     var totalElements = getCollection().countDocuments(filter);
     int totalPages = (int) Math.ceil((double) totalElements / pagination.size());
 
