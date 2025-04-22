@@ -9,7 +9,15 @@ To see all the configuration options check the [configuration](./configuration.m
 You can run your application in dev mode that enables live coding using:
 
 ```shell script
-./mvnw compile quarkus:dev
+quarkus dev -Dquarkus.rest-client.morpheus.url=https://agent-morpheus-route.com/scan  -Dquarkus.http.auth.permission.authenticated.policy=permit
+```
+
+## Supplying application data
+
+You can supply the application with data by sending Agent Morpheus output.json files from your local file system to the application using:
+
+```shell script
+ curl -i -X POST --header 'Content-type: application/json'    http://localhost:8080/reports -d @/path/to/file.json
 ```
 
 > **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
