@@ -98,7 +98,7 @@ public class ReportEndpoint {
   @GET
   public Response list(
       @Context UriInfo uriInfo,
-      @QueryParam(SORT_BY) @DefaultValue("completedAt:DESC") List<String> sortBy,
+      @QueryParam(SORT_BY) @DefaultValue("submittedAt:DESC") List<String> sortBy,
       @QueryParam(PAGE) @DefaultValue("0") Integer page,
       @QueryParam(PAGE_SIZE) @DefaultValue("100") Integer pageSize) {
 
