@@ -9,6 +9,9 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.Tracer;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
@@ -28,6 +31,10 @@ import jakarta.inject.Inject;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Gauge;
+import org.jboss.logmanager.MDC;
+
+import static com.redhat.ecosystemappeng.morpheus.tracing.TracingFieldsCustomizer.SPAN_ID;
+import static com.redhat.ecosystemappeng.morpheus.tracing.TracingFieldsCustomizer.TRACE_ID;
 
 /**
  * This Service is not implemented to support a Clustered environment
@@ -54,6 +61,9 @@ public class RequestQueueService {
 
   @Inject
   ObjectMapper objectMapper;
+
+  @Inject
+  Tracer tracer;
 
   private Queue<String> pending = new LinkedList<>();
   private Map<String, LocalDateTime> active = new HashMap<>();
@@ -90,23 +100,39 @@ public class RequestQueueService {
   }
 
   private void moveToActive() {
-    while (active.size() < maxActive) {
-      var nextId = pending.poll();
-      LOGGER.debugf("Polled %s from the pending queue", nextId);
-      if (nextId == null) {
-        return;
-      }
-      var report = repository.findById(nextId);
-      if (report != null) {
-        try {
-          LOGGER.debugf("Submit report %s", nextId);
-          submit(nextId, objectMapper.readTree(report));
-        } catch (JsonProcessingException e) {
-          LOGGER.error("Unable to submit request", e);
-          repository.updateWithError(nextId, "json-processing-error", e.getMessage());
-        }
+
+    // prevent thread blocked exceptions and a lot of Polled null values from the pending queue messages.
+    while (pending.size() > 0 && active.size() < maxActive) {
+      submitOneReportFromQueue();
+    }
+  }
+
+  private void submitOneReportFromQueue() {
+
+    var nextId = pending.poll();
+    if (nextId == null) {
+      return;
+    }
+    Span span = tracer.spanBuilder("internal queue processing submit one former pending")
+            .setSpanKind(SpanKind.INTERNAL)
+            .startSpan();
+    var report = repository.findById(nextId);
+
+    LOGGER.debugf("Polled %s from the pending queue", nextId);
+    if (report != null) {
+      try {
+
+        JsonNode jsonReport = objectMapper.readTree(report);
+        MDC.put(TRACE_ID, jsonReport.get("input").get("scan").get("id").textValue());
+        MDC.put(SPAN_ID, span.getSpanContext().getSpanId());
+        LOGGER.debugf("Submit report %s", nextId);
+        submit(nextId, jsonReport);
+      } catch (JsonProcessingException e) {
+        LOGGER.error("Unable to submit request", e);
+        repository.updateWithError(nextId, "json-processing-error", e.getMessage());
       }
     }
+    span.end();
   }
 
   public void queue(String id, JsonNode json) {

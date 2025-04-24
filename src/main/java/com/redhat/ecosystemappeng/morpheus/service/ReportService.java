@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import io.opentelemetry.context.Context;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
@@ -45,6 +46,8 @@ import io.quarkus.scheduler.Scheduler;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
+
+import static com.redhat.ecosystemappeng.morpheus.tracing.TextMapPropagatorImpl.getTraceIdFromContext;
 
 @ApplicationScoped
 public class ReportService {
@@ -164,7 +167,7 @@ public class ReportService {
           id = existing.get(0);
         }
       } else {
-        scanId = UUID.randomUUID().toString();
+        scanId = getTraceIdFromContext(Context.current());
       }
 
       if (existing == null || existing.isEmpty()) {
@@ -198,7 +201,7 @@ public class ReportService {
   public ReportRequestId submit(ReportRequest request) throws JsonProcessingException, IOException {
     var scanId = request.id();
     if (scanId == null) {
-      scanId = UUID.randomUUID().toString();
+      scanId = getTraceIdFromContext(Context.current());
     }
     var scan = buildScan(request);
     var image = buildImage(request);
@@ -216,7 +219,7 @@ public class ReportService {
   private Scan buildScan(ReportRequest request) {
     var id = request.id();
     if (id == null) {
-      id = UUID.randomUUID().toString();
+      id = getTraceIdFromContext(Context.current());
     }
     return new Scan(id, request.vulnerabilities().stream().map(String::toUpperCase).map(VulnId::new).toList());
   }
