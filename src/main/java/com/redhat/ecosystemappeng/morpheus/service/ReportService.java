@@ -223,21 +223,6 @@ public class ReportService {
     }
     return new Scan(id, request.vulnerabilities().stream().map(String::toUpperCase).map(VulnId::new).toList());
   }
-// Try to fetch from tracing context the traceId, so report/scan id will be aligned with request traceID Propagated along the analysis request lifetime.
-//  private static String calculateReportId() {
-//    String id;
-//    String tracingContextString = Context.current().toString();
-//    int traceIdStartIndex = tracingContextString.lastIndexOf(TRACE_ID);
-//    int traceIdStartIndexOfValue = traceIdStartIndex + 8;
-//    if(traceIdStartIndex > -1 &&  traceIdStartIndex + 8 < tracingContextString.length() ) {
-//      id = tracingContextString.substring(traceIdStartIndexOfValue, traceIdStartIndex + 40);
-//    }
-//    // Only if failed to get the traceId, Generate it using a random UUID
-//    else {
-//      id = UUID.randomUUID().toString();
-//    }
-//    return id;
-//  }
 
   private Image buildImage(ReportRequest request) {
     var sbom = request.sbom();
