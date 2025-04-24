@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.redhat.ecosystemappeng.morpheus.tracing.TraceToMdc;
-import io.opentelemetry.instrumentation.annotations.WithSpan;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 

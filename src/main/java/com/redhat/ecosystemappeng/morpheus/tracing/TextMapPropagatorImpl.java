@@ -5,7 +5,6 @@ import io.opentelemetry.context.ContextKey;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.context.propagation.TextMapSetter;
-import jakarta.enterprise.context.ApplicationScoped;
 import org.jboss.logmanager.MDC;
 
 import java.util.Collection;
