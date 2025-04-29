@@ -5,6 +5,7 @@ import { Breadcrumb, BreadcrumbItem, Button, Divider, EmptyState, EmptyStateBody
 import CubesIcon from '@patternfly/react-icons/dist/esm/icons/cubes-icon';
 import ExclamationCircleIcon from '@patternfly/react-icons/dist/esm/icons/exclamation-circle-icon';
 import JustificationBanner from "./components/JustificationBanner";
+import CvssBanner from "./components/CvssBanner";
 import { ConfirmationButton } from "./components/ConfirmationButton";
 import { getMetadataColor } from "./Constants";
 
@@ -177,6 +178,10 @@ export default function Report() {
               <DescriptionListGroup>
                 <DescriptionListTerm>Summary</DescriptionListTerm>
                 <DescriptionListDescription>{vuln.summary}</DescriptionListDescription>
+              </DescriptionListGroup>
+              <DescriptionListGroup>
+                <DescriptionListTerm>CVSS Score</DescriptionListTerm>
+                <DescriptionListDescription><CvssBanner cvss={vuln.cvss ?? null} /></DescriptionListDescription>
               </DescriptionListGroup>
             </DescriptionList>
             <Content component="h2">Checklist:</Content>
