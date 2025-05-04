@@ -2,12 +2,9 @@ package com.redhat.ecosystemappeng.morpheus.service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
@@ -65,8 +62,8 @@ public class RequestQueueService {
   @Inject
   Tracer tracer;
 
-  private Queue<String> pending = new LinkedList<>();
-  private Map<String, LocalDateTime> active = new HashMap<>();
+  private Queue<String> pending = new ConcurrentLinkedQueue<>();
+  private Map<String, LocalDateTime> active = new ConcurrentHashMap<>();
   private LocalDateTime lastCheck = LocalDateTime.now();
 
   @Inject
