@@ -165,4 +165,13 @@ public class RequestQueueService {
     active.remove(id);
   }
 
+  public void deleted(String id) {
+    LOGGER.debugf("Removed deleted report %s. Removing from active queue.", id);
+    active.remove(id);
+  }
+
+  public void deleted(Collection<String> ids) {
+    ids.forEach( id -> this.deleted(id));
+  }
+
 }
