@@ -269,8 +269,9 @@ public class ReportRepositoryService {
         String docInternalId = doc.get(RepositoryConstants.ID_KEY, ObjectId.class).toHexString();
         collection.add(docInternalId);
 
-      }
 
+      }
+    getCollection().deleteMany(filter).wasAcknowledged();
     return collection;
   }
 
