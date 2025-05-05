@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import com.mongodb.client.MongoCursor;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
@@ -258,10 +259,20 @@ public class ReportRepositoryService {
         .wasAcknowledged();
   }
 
-  public boolean remove(Map<String, String> queryFilter) {
+  public Collection<String> remove(Map<String, String> queryFilter) {
 
     var filter = buildQueryFilter(queryFilter);
-    return getCollection().deleteMany(filter).wasAcknowledged();
+    Collection collection = new ArrayList();
+    MongoCursor<Document> docs = getCollection().find(filter).cursor();
+      for (MongoCursor<Document> it = docs; it.hasNext(); ) {
+        Document doc = it.next();
+        String docInternalId = doc.get(RepositoryConstants.ID_KEY, ObjectId.class).toHexString();
+        collection.add(docInternalId);
+
+
+      }
+    getCollection().deleteMany(filter).wasAcknowledged();
+    return collection;
   }
 
   public void removeBefore(Instant threshold) {
