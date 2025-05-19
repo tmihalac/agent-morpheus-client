@@ -180,6 +180,8 @@ export default function Report() {
                 <DescriptionListDescription>{vuln.summary}</DescriptionListDescription>
               </DescriptionListGroup>
               <DescriptionListGroup>
+                <DescriptionListTerm>CVSS Vector String</DescriptionListTerm>
+                <DescriptionListDescription>{vuln.cvss?.vector_string ?? ''}</DescriptionListDescription>
                 <DescriptionListTerm>CVSS Score</DescriptionListTerm>
                 <DescriptionListDescription><CvssBanner cvss={vuln.cvss ?? null} /></DescriptionListDescription>
               </DescriptionListGroup>
