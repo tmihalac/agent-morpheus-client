@@ -185,6 +185,10 @@ export default function Report() {
                 <DescriptionListTerm>CVSS Score</DescriptionListTerm>
                 <DescriptionListDescription><CvssBanner cvss={vuln.cvss ?? null} /></DescriptionListDescription>
               </DescriptionListGroup>
+              <DescriptionListGroup>
+                <DescriptionListTerm>CVE score</DescriptionListTerm>
+                <DescriptionListDescription>{vuln?.intel_score ?? ''}</DescriptionListDescription>
+              </DescriptionListGroup>
             </DescriptionList>
             <Content component="h2">Checklist:</Content>
             <List component={ListComponent.ol}>

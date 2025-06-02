@@ -2841,6 +2841,7 @@
           "cve": "CVE-2024-3744"
         },
         "plugin_data": [],
+        "intel_score": 77,
         "has_sufficient_intel_for_agent": true
       }
     ],

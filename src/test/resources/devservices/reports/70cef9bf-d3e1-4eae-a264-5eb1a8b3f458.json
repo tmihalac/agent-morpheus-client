@@ -2666,6 +2666,7 @@
           "cve": "CVE-2024-45496"
         },
         "plugin_data": [],
+        "intel_score": 55,
         "has_sufficient_intel_for_agent": true
       }
     ],

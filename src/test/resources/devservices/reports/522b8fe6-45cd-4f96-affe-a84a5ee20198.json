@@ -8074,7 +8074,8 @@
           "date": "2025-01-26",
           "cve": "CVE-2023-45288"
         },
-        "plugin_data": []
+        "plugin_data": [],
+        "intel_score": 85
       }
     ],
     "sbom": {

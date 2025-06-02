@@ -2269,6 +2269,7 @@
           "cve": "CVE-2024-44337"
         },
         "plugin_data": [],
+        "intel_score": 15,
         "has_sufficient_intel_for_agent": true
       }
     ],
