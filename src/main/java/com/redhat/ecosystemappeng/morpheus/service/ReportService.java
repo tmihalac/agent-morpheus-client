@@ -235,7 +235,9 @@ public class ReportService {
     var tag = getProperty(component, "version");
     var properties = new HashMap<String, String>();
     metadata.get("properties").forEach(p -> properties.put(getProperty(p, "name"), getProperty(p, "value")));
-
+    if(Objects.nonNull(request.metadata())) {
+      properties.putAll(request.metadata());
+    }
     var commitId = properties.get(COMMIT_ID_PROPERTY);
     var sourceLocation = properties.get(SOURCE_LOCATION_PROPERTY);
 
