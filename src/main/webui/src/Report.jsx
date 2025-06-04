@@ -162,7 +162,7 @@ export default function Report() {
           <DescriptionListDescription>{comments[vuln.vuln_id]}</DescriptionListDescription>
         </DescriptionListGroup>
         }
-        return <>
+        return (<>
             <Title headingLevel="h2" size="lg">
               <Link to={`/reports?vulnId=${vuln.vuln_id}`} style={{ color: "black"}}>
                 {vuln.vuln_id}
@@ -190,15 +190,24 @@ export default function Report() {
                 <DescriptionListDescription>{vuln?.intel_score ?? ''}</DescriptionListDescription>
               </DescriptionListGroup>
             </DescriptionList>
-            <Content component="h2">Checklist:</Content>
-            <List component={ListComponent.ol}>
-              {vuln.checklist.map((item, i_idx) => {
-                return <ListItem className="pf-v6-u-pt-m" key={`${v_idx}_${i_idx}`}>
-                  <Content key={`${v_idx}_${i_idx}_question`} component={ContentVariants.dt}>Q: {item.input}</Content>
-                  <Content key={`${v_idx}_${i_idx}_response`} component={ContentVariants.dd}>A: {item.response}</Content>
-                </ListItem>
-              })}
-            </List></>
+            {Array.isArray(vuln.checklist) && vuln.checklist.length > 0 && (
+                <>
+                  <Content component="h2">Checklist:</Content>
+                  <List component={ListComponent.ol}>
+                    {vuln.checklist.map((item, i_idx) => (
+                        <ListItem className="pf-v6-u-pt-m" key={`${v_idx}_${i_idx}`}>
+                          <Content key={`${v_idx}_${i_idx}_question`} component={ContentVariants.dt}>
+                            Q: {item.input}
+                          </Content>
+                          <Content key={`${v_idx}_${i_idx}_response`} component={ContentVariants.dd}>
+                            A: {item.response}
+                          </Content>
+                        </ListItem>
+                    ))}
+                  </List>
+                </>
+            )}
+        </>);
       })}
       <GridItem>
         <Flex columnGap={{ default: 'columnGapSm' }}>
