@@ -185,10 +185,15 @@ export default function Report() {
                 <DescriptionListTerm>CVSS Score</DescriptionListTerm>
                 <DescriptionListDescription><CvssBanner cvss={vuln.cvss ?? null} /></DescriptionListDescription>
               </DescriptionListGroup>
-              <DescriptionListGroup>
-                <DescriptionListTerm>CVE score</DescriptionListTerm>
-                <DescriptionListDescription>{vuln?.intel_score ?? ''}</DescriptionListDescription>
-              </DescriptionListGroup>
+              {vuln.intel_score !== undefined && vuln.intel_score > 0 && (
+                  <>
+                    <DescriptionListGroup>
+                      <DescriptionListTerm>CVE intel score</DescriptionListTerm>
+                      <DescriptionListDescription>{vuln?.intel_score ?? ''}</DescriptionListDescription>
+                    </DescriptionListGroup>
+                  </>
+                  )
+              }
             </DescriptionList>
             {Array.isArray(vuln.checklist) && vuln.checklist.length > 0 && (
                 <>
