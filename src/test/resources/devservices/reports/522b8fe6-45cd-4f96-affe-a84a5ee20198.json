@@ -10898,7 +10898,8 @@
         "label": "requires_environment",
         "reason": "The vulnerability requires a specific environment (HTTP/2 protocol and CONTINUATION frame processing) that is not present in the containerized application, making it not exploitable.",
         "status": "FALSE"
-      }
+      },
+      "intel_score": 85
     }
   ]
 }

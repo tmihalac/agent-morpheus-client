@@ -2,11 +2,13 @@ package com.redhat.ecosystemappeng.morpheus.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.inject.Singleton;
 
 import java.util.List;
 import java.util.Map;
 
 @RegisterForReflection
+@Singleton
 public class UserComments {
     @JsonProperty("cve_id")
     private String cveId = "CVE-XXXX-XXXX";

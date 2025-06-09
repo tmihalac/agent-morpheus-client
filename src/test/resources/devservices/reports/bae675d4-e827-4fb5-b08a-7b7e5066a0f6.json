@@ -5570,7 +5570,8 @@
         "label": "uncertain",
         "reason": "The analysis is inconclusive due to a lack of specific information regarding devfile parsing logic, cleanup process, and user interaction points, making it uncertain whether the package is exploitable.",
         "status": "UNKNOWN"
-      }
+      },
+      "intel_score": 95
     }
   ]
 }

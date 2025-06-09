@@ -5117,7 +5117,8 @@
         "label": "vulnerable",
         "reason": "The analysis concludes that the CVE is exploitable based on the investigation results, indicating that the necessary permissions are present, and the vulnerability can be used to execute arbitrary commands and potentially escalate privileges.",
         "status": "TRUE"
-      }
+      },
+      "intel_score": 55
     }
   ]
 }

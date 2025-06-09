@@ -6351,7 +6351,8 @@
         "label": "code_not_present",
         "reason": "The container image does not use the jose package, which contains the vulnerable functions, making the CVE not exploitable.",
         "status": "FALSE"
-      }
+      },
+      "intel_score": 89
     }
   ]
 }

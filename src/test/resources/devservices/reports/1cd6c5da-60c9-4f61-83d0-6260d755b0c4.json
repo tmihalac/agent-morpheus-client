@@ -4572,7 +4572,8 @@
         "label": "vulnerable",
         "reason": "The analysis concludes that the CVE is exploitable due to the application's failure to properly sanitize and validate user input for Markdown parsing, making it vulnerable to specially crafted inputs that can cause an infinite loop.",
         "status": "TRUE"
-      }
+      },
+      "intel_score": 25
     }
   ]
 }

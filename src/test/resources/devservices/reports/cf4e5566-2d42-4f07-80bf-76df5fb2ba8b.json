@@ -5461,7 +5461,8 @@
         "label": "uncertain",
         "reason": "The analysis concludes that the CVE is \"not definitively exploitable\" due to ambiguous answers in the checklist items and a lack of information on whether the prerequisites for exploitability are met.",
         "status": "UNKNOWN"
-      }
+      },
+      "intel_score": 77
     }
   ]
 }
