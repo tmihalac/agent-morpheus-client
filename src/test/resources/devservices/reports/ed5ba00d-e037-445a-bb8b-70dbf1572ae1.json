@@ -4288,6 +4288,7 @@
           "date": "2025-01-25",
           "cve": "CVE-2024-28180"
         },
+        "intel_score": 11,
         "plugin_data": []
       }
     ],
@@ -6350,7 +6351,8 @@
         "label": "protected_by_mitigating_control",
         "reason": "The application has a safeguard in place to prevent excessive memory and CPU usage during decompression, limiting the decompression output size to prevent a Denial of Service (DoS) attack, which mitigates the likelihood or impact of the vulnerability.",
         "status": "FALSE"
-      }
+      },
+      "intel_score": 11
     }
   ]
 }

@@ -3114,6 +3114,7 @@
           "cve": "CVE-2024-1485"
         },
         "plugin_data": [],
+        "intel_score": 71,
         "has_sufficient_intel_for_agent": true
       }
     ],
@@ -5931,7 +5932,8 @@
         "label": "uncertain",
         "reason": "The analysis is inconclusive due to a lack of specific information regarding devfile parsing logic, cleanup process, and user interaction points, making it uncertain whether the package is exploitable.",
         "status": "UNKNOWN"
-      }
+      },
+      "intel_score": 71
     }
   ]
 }

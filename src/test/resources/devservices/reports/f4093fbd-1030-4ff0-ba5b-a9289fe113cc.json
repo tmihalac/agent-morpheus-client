@@ -3239,6 +3239,7 @@
           "cve": "CVE-2024-0406"
         },
         "plugin_data": [],
+        "intel_score": 44,
         "has_sufficient_intel_for_agent": true
       }
     ],
@@ -6230,7 +6231,8 @@
         "label": "uncertain",
         "reason": "The analysis concludes that the CVE's exploitability remains uncertain due to lack of conclusive evidence, requiring further investigation to determine the package's exploitability status.",
         "status": "UNKNOWN"
-      }
+      },
+      "intel_score": 44
     }
   ]
 }

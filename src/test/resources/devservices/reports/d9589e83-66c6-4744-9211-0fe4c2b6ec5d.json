@@ -4288,6 +4288,7 @@
           "date": "2025-01-25",
           "cve": "CVE-2024-28180"
         },
+        "intel_score": 89,
         "plugin_data": []
       }
     ],
@@ -6350,7 +6351,8 @@
         "label": "code_not_present",
         "reason": "The container image does not use the jose package, which contains the vulnerable functions, making the CVE not exploitable.",
         "status": "FALSE"
-      }
+      },
+      "intel_score": 89
     }
   ]
 }

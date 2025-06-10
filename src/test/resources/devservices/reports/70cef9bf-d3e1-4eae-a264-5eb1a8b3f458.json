@@ -2666,6 +2666,7 @@
           "cve": "CVE-2024-45496"
         },
         "plugin_data": [],
+        "intel_score": 55,
         "has_sufficient_intel_for_agent": true
       }
     ],
@@ -5116,7 +5117,8 @@
         "label": "vulnerable",
         "reason": "The analysis concludes that the CVE is exploitable based on the investigation results, indicating that the necessary permissions are present, and the vulnerability can be used to execute arbitrary commands and potentially escalate privileges.",
         "status": "TRUE"
-      }
+      },
+      "intel_score": 55
     }
   ]
 }

@@ -3328,6 +3328,7 @@
           "date": "2025-01-20",
           "cve": "CVE-2024-41110"
         },
+        "intel_score": 60,
         "plugin_data": []
       }
     ],
@@ -6042,7 +6043,8 @@
         "label": "code_not_reachable",
         "reason": "The vulnerable code is not executed during runtime because the container image does not use the Docker Engine API client to make requests and the authorization plugins used do not rely on the request or response body to make access control decisions.",
         "status": "FALSE"
-      }
+      },
+      "intel_score": 60
     }
   ]
 }
