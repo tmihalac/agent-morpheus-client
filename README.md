@@ -30,6 +30,21 @@ After submitting the request you can go to the _View Reports_ tab where you can 
 There is a configurable pool of concurrent requests. Any request that is submitted when the pool is full will be queued. If after
 a certain time a callback response is not received, the report will be _expired_ (failed).
 
+### User supplied Git repository snapshot
+Sometimes The container image' labels misses the source location (git repository) and 
+its version(commit id or semver tag), or it's exists but under non-standard labels names.
+These values are mandatory for the analysis as they are at the core of the main tools of the agent.
+
+Because of that, one can supply through the `Add Metadata` button these values manually,  using the
+following 2 labels:
+
+1. `image.source-location` - This one is for the git repository sources of the container image
+2. `image.source.commit-id` - This is for the commit id or tag of the above git repository.
+
+Example:
+![img.png](img.png)
+
+
 ### View Reports
 
 This table shows all the reports and allows sorting by _ID_ and _Completed at_ columns. There is a _Status_ dropdown that can be
