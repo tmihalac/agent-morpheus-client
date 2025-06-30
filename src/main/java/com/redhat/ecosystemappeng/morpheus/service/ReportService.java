@@ -54,9 +54,12 @@ public class ReportService {
   private static final Logger LOGGER = Logger.getLogger(ReportService.class);
 
   private static final String COMMIT_ID_PROPERTY = "syft:image:labels:io.openshift.build.commit.id";
+  private static final String COMMIT_ID_PROPERTY_GENERAL = "image.source.commit-id";
   private static final String SOURCE_LOCATION_PROPERTY = "syft:image:labels:io.openshift.build.source-location";
+  private static final String SOURCE_LOCATION_PROPERTY_GENERAL = "image.source-location";
   private static final String PACKAGE_TYPE_PROPERTY = "syft:package:type";
   private static final Pattern PURL_PKG_TYPE = Pattern.compile("pkg\\:(\\w+)\\/.*");
+
 
   @RestClient
   GitHubService gitHubService;
@@ -238,8 +241,8 @@ public class ReportService {
     if(Objects.nonNull(request.metadata())) {
       properties.putAll(request.metadata());
     }
-    var commitId = properties.get(COMMIT_ID_PROPERTY);
-    var sourceLocation = properties.get(SOURCE_LOCATION_PROPERTY);
+    var commitId = getCommitIdFromMetadataLabels(properties);
+    var sourceLocation = getSourceLocationFromMetadataLabels(properties);
 
     var languages = getGitHubLanguages(sourceLocation);
     var allIncludes = languages.stream().map(includes::get).filter(Objects::nonNull).flatMap(Collection::stream)
@@ -251,6 +254,24 @@ public class ReportService {
         new SourceInfo("git", "doc", sourceLocation, commitId, includes.get("Docs"), Collections.emptyList()));
     var sbomInfo = buildSbomInfo(request);
     return new Image(name, tag, srcInfo, sbomInfo);
+  }
+
+  private static String getSourceLocationFromMetadataLabels(HashMap<String, String> properties) {
+    String sourceLocationValue =  properties.get(SOURCE_LOCATION_PROPERTY_GENERAL);
+    if(Objects.isNull(sourceLocationValue))
+    {
+      sourceLocationValue = properties.get(SOURCE_LOCATION_PROPERTY);
+    }
+    return sourceLocationValue;
+  }
+
+  private static String getCommitIdFromMetadataLabels(HashMap<String, String> properties) {
+    String commitIdIdValue = properties.get(COMMIT_ID_PROPERTY_GENERAL);
+    if(Objects.isNull(commitIdIdValue)) {
+      commitIdIdValue = properties.get(COMMIT_ID_PROPERTY);
+    }
+
+    return commitIdIdValue;
   }
 
   private JsonNode buildSbomInfo(ReportRequest request) {
