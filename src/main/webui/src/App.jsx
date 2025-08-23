@@ -137,7 +137,7 @@ export default function App() {
       </PageToggleButton>
     </MastheadToggle>
       <MastheadBrand>
-        <Title headingLevel='h2'>Agent Morpheus - GUI</Title>
+        <Title headingLevel='h2'>ExploitIQ - GUI</Title>
       </MastheadBrand>
     </MastheadMain>
     <MastheadContent>{headerToolbar}</MastheadContent>

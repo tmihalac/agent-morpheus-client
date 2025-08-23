@@ -1,6 +1,6 @@
-# Agent Morpheus - Client
+# ExploitIQ - Client
 
-This project is a Quarkus + React web application implemented to interact with Agent Morpheus service
+This project is a Quarkus + React web application implemented to interact with ExploitIQ service
 for sending requests to evaluate vulnerabilities on specific SBOMs.
 
 ## Development
