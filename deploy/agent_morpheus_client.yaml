@@ -84,6 +84,20 @@ spec:
                 secretKeyRef:
                   name: agent-morpheus-client-secret
                   key: mongodb.dbname
+            - name: DOCKER_CONFIG
+              value: /tmp/.docker
+          volumeMounts:
+            - name: docker-config
+              readOnly: true
+              mountPath: /tmp/.docker
+      volumes:
+        - name: docker-config
+          secret:
+            secretName: image-registry-credentials
+            items:
+              - key: .dockerconfigjson
+                path: config.json
+            defaultMode: 420
 ---
 apiVersion: v1
 kind: Service
