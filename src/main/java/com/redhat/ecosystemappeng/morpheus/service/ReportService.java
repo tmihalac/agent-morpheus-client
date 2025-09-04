@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,6 +30,7 @@ import com.redhat.ecosystemappeng.morpheus.client.GitHubService;
 import com.redhat.ecosystemappeng.morpheus.model.PaginatedResult;
 import com.redhat.ecosystemappeng.morpheus.model.Pagination;
 import com.redhat.ecosystemappeng.morpheus.model.Report;
+import com.redhat.ecosystemappeng.morpheus.model.ReportData;
 import com.redhat.ecosystemappeng.morpheus.model.ReportReceivedEvent;
 import com.redhat.ecosystemappeng.morpheus.model.ReportRequest;
 import com.redhat.ecosystemappeng.morpheus.model.ReportRequestId;
@@ -38,6 +40,11 @@ import com.redhat.ecosystemappeng.morpheus.model.morpheus.ReportInput;
 import com.redhat.ecosystemappeng.morpheus.model.morpheus.Scan;
 import com.redhat.ecosystemappeng.morpheus.model.morpheus.SourceInfo;
 import com.redhat.ecosystemappeng.morpheus.model.morpheus.VulnId;
+import com.redhat.ecosystemappeng.morpheus.model.ProductReportsSummary;
+import com.redhat.ecosystemappeng.morpheus.model.Product;
+import com.redhat.ecosystemappeng.morpheus.model.ProductSummary;
+
+
 import com.redhat.ecosystemappeng.morpheus.rest.NotificationSocket;
 
 import io.quarkus.runtime.Startup;
@@ -66,6 +73,9 @@ public class ReportService {
 
   @Inject
   ReportRepositoryService repository;
+
+  @Inject
+  ProductService productService;
 
   @Inject
   RequestQueueService queueService;
@@ -109,17 +119,47 @@ public class ReportService {
   }
 
   private Map<String, Collection<String>> getMappingConfig(String path) throws IOException {
-    var inputStream = this.getClass().getClassLoader().getResourceAsStream(path);
-    if (inputStream == null) {
-      inputStream = new FileInputStream(path);
+    try (var inputStream = this.getClass().getClassLoader().getResourceAsStream(path)) {
+      if (inputStream != null) {
+        return objectMapper.readValue(inputStream, new TypeReference<Map<String, Collection<String>>>() {});
+      }
     }
-    return objectMapper.readValue(inputStream, new TypeReference<Map<String, Collection<String>>>() {
-    });
+
+    try (var fileInputStream = new FileInputStream(path)) {
+      return objectMapper.readValue(fileInputStream, new TypeReference<Map<String, Collection<String>>>() {});
+    }
   }
 
   public PaginatedResult<Report> list(Map<String, String> filter, List<SortField> sortBy, Integer page,
       Integer pageSize) {
     return repository.list(filter, sortBy, new Pagination(page, pageSize));
+  }
+
+  public List<ProductSummary> listProductSummaries() {
+    List<ProductSummary> summaries = new ArrayList<>();
+    List<String> productIds = repository.getProductIds();
+    for (String productId : productIds) {
+      summaries.add(getProductSummary(productId));
+    }
+    return summaries;
+  }
+
+  public ProductSummary getProductSummary(String productId) {
+    Product product = productService.get(productId);
+
+    ProductReportsSummary productReportsSummary = repository.getProductSummaryData(productId);
+    
+    return new ProductSummary(
+      product, 
+      productReportsSummary
+    );
+  }
+
+  public List<String> getReportIds(List<String> productIds) {
+    if (productIds == null || productIds.isEmpty()) {
+      return new ArrayList<>();
+    }
+    return repository.getReportIdsByProduct(productIds);
   }
 
   public String get(String id) {
@@ -134,7 +174,7 @@ public class ReportService {
   }
 
   public boolean remove(Collection<String> ids) {
-    LOGGER.debugf("Remove reports %s", ids);
+    LOGGER.debugf("Remove reports %s", ids.toString());
     queueService.deleted(ids);
     return repository.remove(ids);
   }
@@ -148,7 +188,7 @@ public class ReportService {
 
   public boolean retry(String id) throws JsonProcessingException {
     var report = get(id);
-    if(report == null) {
+    if(Objects.isNull(report)) {
       return false;
     }
     repository.setAsRetried(id, userService.getUserName());
@@ -167,7 +207,7 @@ public class ReportService {
       scanId = getProperty(scan, "id");
 
       List<String> existing = null;
-      if (scanId != null) {
+      if (Objects.nonNull(scanId)) {
         existing = repository.findByName(scanId).stream().map(Report::id).toList();
         if(existing.size() == 1) {
           id = existing.get(0);
@@ -176,7 +216,7 @@ public class ReportService {
         scanId = getTraceIdFromContext(Context.current());
       }
 
-      if (existing == null || existing.isEmpty()) {
+      if (Objects.isNull(existing) || existing.isEmpty()) {
         LOGGER.infof("Complete new report %s", scanId);
 
         var created = repository.save(report);
@@ -204,9 +244,10 @@ public class ReportService {
     return new ReportRequestId(id, scanId);
   }
 
-  public ReportRequestId submit(ReportRequest request) throws JsonProcessingException, IOException {
+  public ReportData process(ReportRequest request) throws JsonProcessingException, IOException {
+    LOGGER.info("Processing request for Agent Morpheus");
     var scanId = request.id();
-    if (scanId == null) {
+    if (Objects.isNull(scanId)) {
       scanId = getTraceIdFromContext(Context.current());
     }
     var scan = buildScan(request);
@@ -217,20 +258,44 @@ public class ReportService {
     report.set("input", objectMapper.convertValue(input, JsonNode.class));
     report.set("metadata", objectMapper.convertValue(request.metadata(), JsonNode.class));
     var created = repository.save(report.toPrettyString());
-    repository.setAsSubmitted(created.id(), userService.getUserName());
-    queueService.queue(created.id(), report);
-    return new ReportRequestId(created.id(), scan.id());
+    var reportRequestId = new ReportRequestId(created.id(), scan.id());
+    LOGGER.infof("Successfully processed request ID: %s", created.id());
+    LOGGER.debug("Agent Morpheus payload: " + report.toPrettyString());
+    return new ReportData(reportRequestId, report);
+  }
+
+  public void submit(String id, JsonNode report) throws JsonProcessingException, IOException {
+    String byUser = determineUser(report);
+    repository.setAsSubmitted(id, byUser);
+    queueService.queue(id, report);
+    LOGGER.infof("Request ID: %s, sent to Agent Morpheus for analysis", id);
+  }
+
+  private String determineUser(JsonNode report) {
+    JsonNode metadata = report.get("metadata");
+    if (metadata != null && metadata.has("product_id")) {
+      String productId = metadata.get("product_id").asText();
+      String productUser = productService.getUserName(productId);
+      if (productUser != null && !productUser.isEmpty()) {
+        return productUser;
+      }
+    }
+    
+    return userService.getUserName();
   }
 
   private Scan buildScan(ReportRequest request) {
     var id = request.id();
-    if (id == null) {
+    if (Objects.isNull(id)) {
       id = getTraceIdFromContext(Context.current());
     }
     return new Scan(id, request.vulnerabilities().stream().map(String::toUpperCase).map(VulnId::new).toList());
   }
 
-  private Image buildImage(ReportRequest request) {
+  private Image buildImage(ReportRequest request) throws JsonProcessingException, IOException {
+    if (Objects.nonNull(request.image())){
+      return objectMapper.treeToValue(request.image(), Image.class);
+    }
     var sbom = request.sbom();
     var metadata = sbom.get("metadata");
     var component = metadata.get("component");
@@ -258,17 +323,30 @@ public class ReportService {
 
   private static String getSourceLocationFromMetadataLabels(HashMap<String, String> properties) {
     String sourceLocationValue =  properties.get(SOURCE_LOCATION_PROPERTY_GENERAL);
+    
     if(Objects.isNull(sourceLocationValue))
     {
       sourceLocationValue = properties.get(SOURCE_LOCATION_PROPERTY);
     }
+
+    if(Objects.isNull(sourceLocationValue))
+    {
+      throw new IllegalArgumentException("SBOM is missing required field: " + SOURCE_LOCATION_PROPERTY_GENERAL);
+    }
+
     return sourceLocationValue;
   }
 
   private static String getCommitIdFromMetadataLabels(HashMap<String, String> properties) {
     String commitIdIdValue = properties.get(COMMIT_ID_PROPERTY_GENERAL);
+    
     if(Objects.isNull(commitIdIdValue)) {
       commitIdIdValue = properties.get(COMMIT_ID_PROPERTY);
+    }
+
+    if(Objects.isNull(commitIdIdValue))
+    {
+      throw new IllegalArgumentException("SBOM is missing required field: " + COMMIT_ID_PROPERTY_GENERAL + " or " + COMMIT_ID_PROPERTY);
     }
 
     return commitIdIdValue;
@@ -291,20 +369,24 @@ public class ReportService {
 
   public JsonNode buildManualSbom(JsonNode sbom) {
     ArrayNode packages = objectMapper.createArrayNode();
-    sbom.get("components").forEach(c -> {
+    var components = sbom.get("components");
+    if (Objects.isNull(components)) {
+      throw new IllegalArgumentException("SBOM is missing required field: components");
+    }
+    components.forEach(c -> {
       var pkg = objectMapper.createObjectNode();
       pkg.put("name", getProperty(c, "name"));
       pkg.put("version", getProperty(c, "version"));
       var purl = getProperty(c, "purl");
       pkg.put("purl", purl);
       var system = getComponentProperty(c.withArray("properties"));
-      if (system == null && purl != null) {
+      if (Objects.isNull(system) && Objects.nonNull(purl)) {
         var matcher = PURL_PKG_TYPE.matcher(purl);
         if(matcher.matches()) {
           system = matcher.group(1);
         }
       }
-      if (system != null) {
+      if (Objects.nonNull(system)) {
         pkg.put("system", system);
         packages.add(pkg);
       }
@@ -320,7 +402,7 @@ public class ReportService {
   }
 
   private String getComponentProperty(ArrayNode properties) {
-    if (properties == null) {
+    if (Objects.isNull(properties)) {
       return null;
     }
     var it = properties.iterator();

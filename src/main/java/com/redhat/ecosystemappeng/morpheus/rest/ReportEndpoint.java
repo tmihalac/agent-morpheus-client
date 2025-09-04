@@ -4,17 +4,22 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.Objects;
 
 import com.redhat.ecosystemappeng.morpheus.tracing.TraceToMdc;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.ecosystemappeng.morpheus.model.ReportData;
 import com.redhat.ecosystemappeng.morpheus.model.ReportRequest;
 import com.redhat.ecosystemappeng.morpheus.model.SortField;
+import com.redhat.ecosystemappeng.morpheus.service.PreProcessingService;
 import com.redhat.ecosystemappeng.morpheus.service.ReportService;
 import com.redhat.ecosystemappeng.morpheus.service.RequestQueueExceededException;
+import com.redhat.ecosystemappeng.morpheus.service.ProductService;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -24,7 +29,6 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.ServerErrorException;
@@ -54,31 +58,51 @@ public class ReportEndpoint {
   ReportService reportService;
 
   @Inject
+  PreProcessingService preProcessingService;
+
+  @Inject
+  ProductService productService;
+
+  @Inject
   ObjectMapper objectMapper;
 
   @POST
   @Path("/new")
-  public Response submit(ReportRequest request) {
+  public Response newRequest(@QueryParam("submit") @DefaultValue("true") boolean sendToMorpheus, ReportRequest request) {
     try {
-      var req = reportService.submit(request);
-      return Response.accepted(req).build();
+      ReportData res = reportService.process(request);
+
+      if (sendToMorpheus) {
+        reportService.submit(res.reportRequestId().id(), res.report());
+      }
+
+      return Response.accepted(res).build();
     } catch (IllegalArgumentException e) {
-      return Response.status(Status.BAD_REQUEST).entity(objectMapper.createObjectNode().put("error", e.getMessage()))
-          .build();
+      return Response.status(Status.BAD_REQUEST)
+        .entity(objectMapper.createObjectNode()
+        .put("error", e.getMessage()))
+        .build();
     } catch (ClientWebApplicationException e) {
-      return Response.status(e.getResponse().getStatus()).entity(e.getResponse().getEntity()).build();
+      return Response.status(e.getResponse().getStatus())
+        .entity(e.getResponse().getEntity())
+        .build();
     } catch (RequestQueueExceededException e) {
       return Response.status(Status.TOO_MANY_REQUESTS)
-          .entity(objectMapper.createObjectNode().put("error", e.getMessage())).build();
+        .entity(objectMapper.createObjectNode()
+        .put("error", e.getMessage()))
+        .build();
     } catch (Exception e) {
-      LOGGER.error("Unable to submit new analysis request", e);
-      return Response.serverError().entity(objectMapper.createObjectNode().put("error", e.getMessage())).build();
+      LOGGER.error("Unable to process new analysis request", e);
+      return Response.serverError()
+        .entity(objectMapper.createObjectNode()
+        .put("error", e.getMessage()))
+        .build();
     }
   }
 
   @POST
   @Path("/{id}/retry")
-  public Response retry(@PathParam("id") String id) {
+  public Response retry(String id) {
     try {
       if (reportService.retry(id)) {
         return Response.accepted(id).build();
@@ -115,17 +139,84 @@ public class ReportEndpoint {
 
   @GET
   @Path("/{id}")
-  public String get(@PathParam("id") String id) throws InterruptedException {
+  public String get(String id) throws InterruptedException {
     var report = reportService.get(id);
-    if (report == null) {
+    if (Objects.isNull(report)) {
       throw new NotFoundException(id);
     }
     return report;
   }
 
+  @GET
+  @Path("/product/{id}")
+  public Response listProduct(String id) throws InterruptedException {
+    var result = reportService.getProductSummary(id);
+    return Response.ok(result).build();
+  }
+
+  @GET
+  @Path("/product")
+  public Response listProducts() {
+    var result = reportService.listProductSummaries();
+    return Response.ok(result).build();
+  }
+
+  @POST
+  @Path("/{id}/submit")
+  public Response submit(String id) {
+    preProcessingService.confirmResponse(id);
+    
+    String report = reportService.get(id); 
+    if (Objects.isNull(report)) {
+      preProcessingService.handleError(id, "report-not-found-error", "No report exists for ID " + id + " for submission.");
+
+      return Response.status(Response.Status.NOT_FOUND)
+      .entity(objectMapper.createObjectNode()
+      .put("error", "Report with ID " + id + " not found."))
+      .build();
+    }
+    
+    try {
+      JsonNode reportJson = objectMapper.readTree(report);
+      reportService.submit(id, reportJson);
+
+      return Response.accepted(id).build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Status.BAD_REQUEST)
+        .entity(objectMapper.createObjectNode()
+        .put("error", e.getMessage()))
+        .build();
+    } catch (ClientWebApplicationException e) {
+      return Response.status(e.getResponse().getStatus())
+        .entity(e.getResponse().getEntity())
+        .build();
+    } catch (RequestQueueExceededException e) {
+      return Response.status(Status.TOO_MANY_REQUESTS)
+        .entity(objectMapper.createObjectNode()
+        .put("error", e.getMessage()))
+        .build();
+    } catch (Exception e) {
+      LOGGER.error("Unable to submit new analysis request", e);
+      return Response.serverError()
+        .entity(objectMapper.createObjectNode()
+        .put("error", e.getMessage()))
+        .build();
+    }
+  }
+
+  @POST
+  @Path("/{id}/failed")
+  @Consumes(MediaType.TEXT_PLAIN)
+  public Response failed(String id, String errorMessage) {
+    preProcessingService.confirmResponse(id);
+    
+    preProcessingService.handleError(id, "component-syncer-processing-error", errorMessage);
+    return Response.accepted(id).build();
+  }
+
   @DELETE
   @Path("/{id}")
-  public Response remove(@PathParam("id") String id) {
+  public Response remove(String id) {
     if (reportService.remove(id)) {
       return Response.accepted().build();
     }
@@ -142,6 +233,36 @@ public class ReportEndpoint {
     } else {
       reportService.remove(reportIds);
     }
+    return Response.accepted().build();
+  }
+
+  @DELETE
+  @Path("/product")
+  public Response removeManyByProductId(@QueryParam("productIds") List<String> productIds) {
+    if (Objects.isNull(productIds) || productIds.isEmpty()) {
+      return Response.status(Status.BAD_REQUEST)
+        .entity(objectMapper.createObjectNode()
+        .put("error", "No productIds provided"))
+        .build();
+    }
+    List<String> reportIds = reportService.getReportIds(productIds);
+    if (Objects.isNull(reportIds) || reportIds.isEmpty()) {
+      return Response.accepted().build();
+    }
+    reportService.remove(reportIds);
+    productService.remove(productIds);
+    return Response.accepted().build();
+  }
+
+  @DELETE
+  @Path("/product/{id}")
+  public Response removeByProductId(String id) {
+    List<String> reportIds = reportService.getReportIds(List.of(id));
+    if (Objects.isNull(reportIds) || reportIds.isEmpty()) {
+      return Response.accepted().build();
+    }
+    reportService.remove(reportIds);
+    productService.remove(id);
     return Response.accepted().build();
   }
 }

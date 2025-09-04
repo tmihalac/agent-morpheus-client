@@ -7,7 +7,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
+import java.util.Objects;
 
 import com.mongodb.client.MongoCursor;
 import org.bson.Document;
@@ -34,6 +36,7 @@ import com.redhat.ecosystemappeng.morpheus.model.Report;
 import com.redhat.ecosystemappeng.morpheus.model.SortField;
 import com.redhat.ecosystemappeng.morpheus.model.SortType;
 import com.redhat.ecosystemappeng.morpheus.model.VulnResult;
+import com.redhat.ecosystemappeng.morpheus.model.ProductReportsSummary;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -47,6 +50,7 @@ public class ReportRepositoryService {
 
   private static final String SENT_AT = "sent_at";
   private static final String SUBMITTED_AT = "submitted_at";
+  private static final String PRODUCT_ID = "product_id";
   private static final Collection<String> METADATA_DATES = List.of(SUBMITTED_AT, SENT_AT);
   private static final String COLLECTION = "reports";
   private static final Map<String, Bson> STATUS_FILTERS = Map.of(
@@ -57,7 +61,11 @@ public class ReportRepositoryService {
       "failed", Filters.ne("error", null),
       "queued", Filters.and(Filters.ne("metadata." + SUBMITTED_AT, null), Filters.eq("metadata." + SENT_AT, null),
           Filters.eq("error", null), Filters.eq("input.scan.completed_at", null)),
-      "expired", Filters.and(Filters.ne("error", null),Filters.eq("error.type", "expired")));;
+      "expired", Filters.and(Filters.ne("error", null),Filters.eq("error.type", "expired")),
+      "pending", Filters.and(
+        Filters.eq("metadata." + SENT_AT, null),
+        Filters.eq("metadata." + SUBMITTED_AT, null),
+        Filters.ne("metadata." + PRODUCT_ID, null)));
 
   @Inject
   MongoClient mongoClient;
@@ -68,20 +76,16 @@ public class ReportRepositoryService {
   @Inject
   ObjectMapper objectMapper;
 
+  @Inject
+  ProductRepositoryService productRepositoryService;
+
   public MongoCollection<Document> getCollection() {
     return mongoClient.getDatabase(dbName).getCollection(COLLECTION);
   }
 
-  public Report toReport(Document doc) {
-    if (doc == null) {
-      return null;
-    }
-    var input = doc.get("input", Document.class);
-    var scan = input.get("scan", Document.class);
-    var image = input.get("image", Document.class);
-    var output = doc.getList("output", Document.class);
-    var metadataField = doc.get("metadata", Document.class);
+  private Map<String, String> extractMetadata(Document doc) {
     var metadata = new HashMap<String, String>();
+    var metadataField = doc.get("metadata", Document.class);
     if (metadataField != null) {
       metadataField.keySet().forEach(key -> {
         if (METADATA_DATES.contains(key)) {
@@ -92,8 +96,20 @@ public class ReportRepositoryService {
         }
       });
     }
+    return metadata;
+  }
+
+  public Report toReport(Document doc) {
+    if (Objects.isNull(doc)) {
+      return null;
+    }
+    var input = doc.get("input", Document.class);
+    var scan = input.get("scan", Document.class);
+    var image = input.get("image", Document.class);
+    var output = doc.getList("output", Document.class);
+    var metadata = extractMetadata(doc);
     var vulnIds = new HashSet<VulnResult>();
-    if (output != null) {
+    if (Objects.nonNull(output)) {
       output.forEach(o -> {
         var vulnId = o.getString("vuln_id");
         var justification = o.get("justification", Document.class);
@@ -129,18 +145,21 @@ public class ReportRepositoryService {
       return "failed";
     }
     var input = doc.get("input", Document.class);
-    if (input != null) {
+    if (Objects.nonNull(input)) {
       var scan = input.get("scan", Document.class);
-      if (scan.getString("completed_at") != null) {
+      if (Objects.nonNull(scan.getString("completed_at"))) {
         return "completed";
       }
     }
-    if (metadata != null) {
-      if (metadata.get(SENT_AT) != null) {
+    if (Objects.nonNull(metadata)) {
+      if (Objects.nonNull(metadata.get(SENT_AT))) {
         return "sent";
       }
-      if (metadata.get(SUBMITTED_AT) != null) {
+      if (Objects.nonNull(metadata.get(SUBMITTED_AT))) {
         return "queued";
+      }
+      if (Objects.nonNull(metadata.get(PRODUCT_ID))) {
+        return "pending";
       }
     }
 
@@ -149,6 +168,9 @@ public class ReportRepositoryService {
 
   public void updateWithOutput(List<String> ids, JsonNode report)
       throws JsonMappingException, JsonProcessingException {
+    
+    Set<String> productIds = getProductId(ids);
+    
     List<Document> outputDocs = objectMapper.readValue(report.get("output").toPrettyString(),
         new TypeReference<List<Document>>() {
 
@@ -163,11 +185,19 @@ public class ReportRepositoryService {
         .map(id -> new UpdateOneModel<Document>(Filters.eq(RepositoryConstants.ID_KEY, new ObjectId(id)), updates))
         .toList();
     getCollection().bulkWrite(bulk);
+    
+    productIds.forEach(this::checkAndStoreProductCompletion);
   }
 
   public void updateWithError(String id, String errorType, String errorMessage) {
+    String productId = getProductId(id);  
+    
     var error = new Document("type", errorType).append("message", errorMessage);
     getCollection().updateOne(new Document(RepositoryConstants.ID_KEY, new ObjectId(id)), Updates.set("error", error));
+    
+    if (productId != null) {
+      checkAndStoreProductCompletion(productId);
+    }
   }
 
   public Report save(String data) {
@@ -184,10 +214,12 @@ public class ReportRepositoryService {
 
   public void setAsSubmitted(String id, String byUser) {
     var objId = new ObjectId(id);
-    getCollection().updateOne(Filters.eq(RepositoryConstants.ID_KEY, objId),
-        List.of(
-            Updates.set("metadata." + SUBMITTED_AT, Instant.now()),
-            Updates.set("metadata.user", byUser)));
+
+    List<Bson> updates = new ArrayList<>();
+    updates.add(Updates.set("metadata." + SUBMITTED_AT, Instant.now()));
+    updates.add(Updates.set("metadata.user", byUser));
+
+    getCollection().updateOne(Filters.eq(RepositoryConstants.ID_KEY, objId), updates);
   }
 
   public void setAsRetried(String id, String byUser) {
@@ -248,15 +280,208 @@ public class ReportRepositoryService {
     return new PaginatedResult<Report>(totalElements, totalPages, reports.stream());
   }
 
+
+  public List<String> getProductIds() {
+    List<String> productIds = new ArrayList<>();
+    Bson filter = Filters.exists("metadata.product_id", true);
+    getCollection()
+      .distinct("metadata.product_id", filter, String.class)
+      .iterator()
+      .forEachRemaining(pid -> {
+        if (pid != null && !pid.isEmpty()) {
+          productIds.add(pid);
+        }
+      });
+    return productIds;
+  }
+
+  public ProductReportsSummary getProductSummaryData(String productId) {
+    Bson productFilter = Filters.eq("metadata.product_id", productId);
+    Map<String, Set<Justification>> cveSet = new HashMap<>();
+    List<String> componentStates = new ArrayList<>();
+    String productState = "unknown";
+
+    getCollection()
+      .find(productFilter)
+      .iterator()
+      .forEachRemaining(doc -> {
+        Map<String, String> metadata = extractMetadata(doc);
+        String reportStatus = getStatus(doc, metadata);
+        componentStates.add(reportStatus);
+
+        Object inputObj = doc.get("input");
+        if (inputObj instanceof org.bson.Document inputDoc) {
+          Object scanObj = inputDoc.get("scan");
+          if (scanObj instanceof org.bson.Document scanDoc) {
+            Object vulnsObj = scanDoc.get("vulns");
+            if (vulnsObj instanceof List<?> vulnsList) {
+              for (Object vulnObj : vulnsList) {
+                if (vulnObj instanceof org.bson.Document vulnDoc) {
+                  String cve = vulnDoc.getString("vuln_id");
+                  if (cve != null && !cve.isEmpty()) {
+                    cveSet.putIfAbsent(cve, new HashSet<>());
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        Object outputObj = doc.get("output");
+        if (outputObj instanceof List<?> outputList) {
+          for (Object output : outputList) {
+            if (output instanceof org.bson.Document outputDoc) {
+              String cve = outputDoc.getString("vuln_id");
+              if (cve != null && !cve.isEmpty()) {
+                Set<Justification> justifications = cveSet.computeIfAbsent(cve, k -> new HashSet<>());
+                Object justificationObj = outputDoc.get("justification");
+                if (justificationObj instanceof org.bson.Document justificationDoc) {
+                  String status = justificationDoc.getString("status");
+                  String label = justificationDoc.getString("label");
+                  if (status != null && !status.isEmpty() && label != null && !label.isEmpty()) {
+                    justifications.add(new Justification(status, label));
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+
+    if (componentStates.contains("pending") || componentStates.contains("queued") || componentStates.contains("sent")) {
+      productState = "analysing";
+    } else {
+      productState = "completed";
+    }
+
+    return new ProductReportsSummary(
+      productState,
+      componentStates,
+      cveSet
+    );
+  }
+
+  private String getProductId(String reportId) {
+    Document doc = getCollection().find(Filters.eq(RepositoryConstants.ID_KEY, new ObjectId(reportId))).first();
+    if (Objects.nonNull(doc)) {
+      var metadata = doc.get("metadata", Document.class);
+      if (Objects.nonNull(metadata)) {
+        return metadata.getString("product_id");
+      }
+    }
+    return null;
+  }
+
+  private Set<String> getProductId(Collection<String> reportIds) {
+    Set<String> productIds = new HashSet<>();
+    reportIds.forEach(id -> {
+      String productId = getProductId(id);
+      if (Objects.nonNull(productId)) {
+        productIds.add(productId);
+      }
+    });
+    return productIds;
+  }
+
+  private void checkAndStoreProductCompletion(String productId) {
+    // Check if this product just became completed
+    Bson productFilter = Filters.eq("metadata.product_id", productId);
+    boolean hasCompletionTimeStored = false;
+    boolean hasPendingReports = false;
+    String latestCompletionTime = null;
+
+    try (var cursor = getCollection().find(productFilter).cursor()) {
+      while (cursor.hasNext()) {
+        Document doc = cursor.next();
+        Map<String, String> metadata = extractMetadata(doc);
+        
+        if (Objects.nonNull(metadata.get("product_completed_at"))) {
+          hasCompletionTimeStored = true;
+          break;
+        }
+        
+        String reportStatus = getStatus(doc, metadata);
+        
+        if ("pending".equals(reportStatus) || "queued".equals(reportStatus) || "sent".equals(reportStatus)) {
+          hasPendingReports = true;
+          break;
+        }
+        
+        if ("completed".equals(reportStatus) || "failed".equals(reportStatus) || "expired".equals(reportStatus)) {
+          String completedAt = getReportCompletionTime(doc);
+          if (Objects.nonNull(completedAt) && (Objects.isNull(latestCompletionTime) || completedAt.compareTo(latestCompletionTime) > 0)) {
+            latestCompletionTime = completedAt;
+          }
+        }
+      }
+    }
+
+    if (!hasCompletionTimeStored && !hasPendingReports && Objects.nonNull(latestCompletionTime)) {
+      productRepositoryService.updateCompletedAt(productId, latestCompletionTime);
+      LOGGER.infof("Product %s completed at %s", productId, latestCompletionTime);
+    }
+  }
+
+  private String getReportCompletionTime(Document doc) {
+    var input = doc.get("input", Document.class);
+    if (Objects.nonNull(input)) {
+      var scan = input.get("scan", Document.class);
+      if (Objects.nonNull(scan)) {
+        String completedAt = scan.getString("completed_at");
+        if (Objects.nonNull(completedAt)) {
+          return completedAt;
+        }
+      }
+    }
+    
+    var metadata = extractMetadata(doc);
+    String submittedAt = metadata.get("submitted_at");
+    return submittedAt;
+  }
+
+  public List<String> getReportIdsByProduct(List<String> productIds) {
+    List<String> reportIds = new ArrayList<>();
+    if (Objects.isNull(productIds) || productIds.isEmpty()) {
+      return reportIds;
+    }
+    Bson filter = Filters.in("metadata.product_id", productIds);
+    getCollection()
+      .find(filter)
+      .iterator()
+      .forEachRemaining(doc -> {
+        ObjectId id = doc.getObjectId(RepositoryConstants.ID_KEY);
+        if (Objects.nonNull(id)) {
+          reportIds.add(id.toHexString());
+        }
+      });
+    return reportIds;
+  }
+
   public boolean remove(String id) {
-    return getCollection().deleteOne(Filters.eq(RepositoryConstants.ID_KEY, new ObjectId(id))).wasAcknowledged();
+    String productId = getProductId(id);
+    
+    boolean result = getCollection().deleteOne(Filters.eq(RepositoryConstants.ID_KEY, new ObjectId(id))).wasAcknowledged();
+    
+    if (result && Objects.nonNull(productId)) {
+      checkAndStoreProductCompletion(productId);
+    }
+    
+    return result;
   }
 
   public boolean remove(Collection<String> ids) {
-    return getCollection()
+    Set<String> productIds = getProductId(ids);
+    
+    boolean result = getCollection()
         .deleteMany(Filters.in(RepositoryConstants.ID_KEY, ids.stream()
             .map(id -> new ObjectId(id)).toList()))
         .wasAcknowledged();
+    
+    if (result) {
+      productIds.forEach(this::checkAndStoreProductCompletion);
+    }
+    
+    return result;
   }
 
   public Collection<String> remove(Map<String, String> queryFilter) {
