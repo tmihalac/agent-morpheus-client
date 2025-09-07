@@ -86,6 +86,11 @@ spec:
                   key: mongodb.dbname
             - name: DOCKER_CONFIG
               value: /tmp/.docker
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: github-pat
+                  key: GITHUB_TOKEN
           volumeMounts:
             - name: docker-config
               readOnly: true
