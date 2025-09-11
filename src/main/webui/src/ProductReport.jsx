@@ -127,6 +127,18 @@ export default function ProductReport() {
       ) : null}
       <DescriptionList isHorizontal isCompact>
         <DescriptionListGroup>
+          <DescriptionListTerm>Product</DescriptionListTerm>
+          <DescriptionListDescription>
+            {productData?.data.name || null}
+          </DescriptionListDescription>
+        </DescriptionListGroup>
+        <DescriptionListGroup>
+          <DescriptionListTerm>Version</DescriptionListTerm>
+          <DescriptionListDescription>
+            {productData?.data.version || null}
+          </DescriptionListDescription>
+        </DescriptionListGroup>
+        <DescriptionListGroup>
           <DescriptionListTerm>Submitted At</DescriptionListTerm>
           <DescriptionListDescription>
             {productData?.data.submittedAt || null}
