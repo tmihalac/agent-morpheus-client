@@ -331,7 +331,7 @@ public class ReportService {
 
     if(Objects.isNull(sourceLocationValue))
     {
-      throw new IllegalArgumentException("SBOM is missing required field: " + SOURCE_LOCATION_PROPERTY_GENERAL);
+      throw new IllegalArgumentException("SBOM is missing required field: " + SOURCE_LOCATION_PROPERTY_GENERAL + " or " + SOURCE_LOCATION_PROPERTY);
     }
 
     return sourceLocationValue;
