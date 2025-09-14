@@ -33,7 +33,6 @@ export const SourceScanForm = ({ sourceRequest, handlesourceRequestChange, onNew
   }
 
   const handleCveChange = (idx, name) => {
-
     setCves((prevElements) => {
       const updatedElems = prevElements.map((element, index) =>
         index === idx ? { ...element, name: name } : element
@@ -60,6 +59,16 @@ export const SourceScanForm = ({ sourceRequest, handlesourceRequestChange, onNew
       onFormUpdated({ cves: updatedElems });
       return updatedElems
     });
+  }
+
+  const handleSourceRepoChange = (value) => {
+    setSourceRepo(value);
+    onFormUpdated({ sourceRepo: value });
+  }
+  
+  const handleCommitIdChange = (value) => {
+    setCommitId(value);
+    onFormUpdated({ commitId: value });
   }
 
   const onSubmitForm = () => {
@@ -103,6 +112,20 @@ export const SourceScanForm = ({ sourceRequest, handlesourceRequestChange, onNew
         handlesourceRequestChange(update);
         return;
       }
+    }
+
+    const sourceRepo = updated['sourceRepo'];
+    if (sourceRepo === undefined || sourceRepo.trim() === '') {
+      setCanSubmit(false);
+      handlesourceRequestChange(update);
+      return;
+    }
+
+    const commitId = updated['commitId'];
+    if (commitId === undefined || commitId.trim() === '') {
+      setCanSubmit(false);
+      handlesourceRequestChange(update);
+      return;
     }
 
     setCanSubmit(true);
@@ -162,16 +185,12 @@ export const SourceScanForm = ({ sourceRequest, handlesourceRequestChange, onNew
         </FlexItem>
       </Flex>
     </FormSection>
-    <FormSection title="Source Repo">
-      <FormGroup label="Source Repo" isRequired fieldId="source-repo">
-        <TextInput isRequired type="text" id="source-repo" value={sourceRepo} onChange={event => handleSourceRepoChange(event.target.value)} placeholder="Source Repo"></TextInput>
-      </FormGroup>
-    </FormSection>
-    <FormSection title="Commit ID">
-      <FormGroup label="Commit ID" isRequired fieldId="commit-id">
-        <TextInput isRequired type="text" id="commit-id" value={commitId} onChange={event => handleCommitIdChange(event.target.value)} placeholder="Commit ID"></TextInput>
-      </FormGroup>
-    </FormSection>
+    <FormGroup label="Source Repository" isRequired fieldId="source-repo">
+      <TextInput isRequired type="text" id="source-repo" value={sourceRepo} onChange={event => handleSourceRepoChange(event.target.value)} placeholder="https://github.com/example/my-project"></TextInput>
+    </FormGroup>
+    <FormGroup label="Commit ID" isRequired fieldId="commit-id">
+      <TextInput isRequired type="text" id="commit-id" value={commitId} onChange={event => handleCommitIdChange(event.target.value)} placeholder="abc123def456789012345678901234567890abcd"></TextInput>
+    </FormGroup>
     <ActionGroup>
       <Button variant="primary" isDisabled={!canSubmit} onClick={onSubmitForm}>Submit</Button>
     </ActionGroup>
