@@ -246,10 +246,7 @@ public class ReportService {
 
   public ReportData process(ReportRequest request) throws JsonProcessingException, IOException {
     LOGGER.info("Processing request for Agent Morpheus");
-    var scanId = request.id();
-    if (Objects.isNull(scanId)) {
-      scanId = getTraceIdFromContext(Context.current());
-    }
+
     var scan = buildScan(request);
     var image = buildImage(request);
     var input = new ReportInput(scan, image);
@@ -293,23 +290,38 @@ public class ReportService {
   }
 
   private Image buildImage(ReportRequest request) throws JsonProcessingException, IOException {
-    if (Objects.nonNull(request.image())){
-      return objectMapper.treeToValue(request.image(), Image.class);
-    }
-    var sbom = request.sbom();
-    var metadata = sbom.get("metadata");
-    var component = metadata.get("component");
-    var name = getProperty(component, "name");
-    var tag = getProperty(component, "version");
-    var properties = new HashMap<String, String>();
-    metadata.get("properties").forEach(p -> properties.put(getProperty(p, "name"), getProperty(p, "value")));
-    if(Objects.nonNull(request.metadata())) {
-      properties.putAll(request.metadata());
-    }
-    var commitId = getCommitIdFromMetadataLabels(properties);
-    var sourceLocation = getSourceLocationFromMetadataLabels(properties);
 
+    String sourceLocation = null;
+    String commitId = null;
+    String name = null;
+    String tag = null;
+    JsonNode sbomInfo = null;
+
+    if ("image".equals(request.analysisType())) {
+      if (Objects.nonNull(request.image())){
+        return objectMapper.treeToValue(request.image(), Image.class);
+      }
+      var sbom = request.sbom();
+      var metadata = sbom.get("metadata");
+      var component = metadata.get("component");
+      name = getProperty(component, "name");
+      tag = getProperty(component, "version");
+      var properties = new HashMap<String, String>();
+      metadata.get("properties").forEach(p -> properties.put(getProperty(p, "name"), getProperty(p, "value")));
+      if(Objects.nonNull(request.metadata())) {
+        properties.putAll(request.metadata());
+      }
+      commitId = getCommitIdFromMetadataLabels(properties);
+      sourceLocation = getSourceLocationFromMetadataLabels(properties);
+      sbomInfo = buildSbomInfo(request);
+    } else {
+      name = request.sourceRepo();
+      tag = request.commitId();
+      sourceLocation = request.sourceRepo();
+      commitId = request.commitId();
+    }
     var languages = getGitHubLanguages(sourceLocation);
+
     var allIncludes = languages.stream().map(includes::get).filter(Objects::nonNull).flatMap(Collection::stream)
         .toList();
     var allExcludes = languages.stream().map(excludes::get).filter(Objects::nonNull).flatMap(Collection::stream)
@@ -317,8 +329,7 @@ public class ReportService {
     var srcInfo = List.of(
         new SourceInfo("code", sourceLocation, commitId, allIncludes, allExcludes),
         new SourceInfo("doc", sourceLocation, commitId, includes.get("Docs"), Collections.emptyList()));
-    var sbomInfo = buildSbomInfo(request);
-    return new Image(name, tag, srcInfo, sbomInfo);
+    return new Image(request.analysisType(), name, tag, srcInfo, sbomInfo);
   }
 
   private static String getSourceLocationFromMetadataLabels(HashMap<String, String> properties) {

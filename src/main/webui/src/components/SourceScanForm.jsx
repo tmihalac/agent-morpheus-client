@@ -4,7 +4,7 @@ import AddCircleOIcon from '@patternfly/react-icons/dist/esm/icons/add-circle-o-
 
 import { newMorpheusRequest } from "../services/FormUtilsClient";
 
-export const SourceScanForm = ({ sourceRequest, handlesourceRequestChange, onNewAlert }) => {
+export const SourceScanForm = ({ sourceRequest, handleSourceRequestChange, onNewAlert }) => {
   const [cves, setCves] = React.useState(sourceRequest['cves'] || [{}]);
   const [sourceRepo, setSourceRepo] = React.useState(sourceRequest['sourceRepo'] || '');
   const [commitId, setCommitId] = React.useState(sourceRequest['commitId'] || '');
@@ -89,18 +89,18 @@ export const SourceScanForm = ({ sourceRequest, handlesourceRequestChange, onNew
     if(update === undefined) {
       setCanSubmit(false);
     }
-    const updated = handlesourceRequestChange(update);
+    const updated = handleSourceRequestChange(update);
     
     const updatedCves = updated['cves'];    
     if (updatedCves === undefined || updatedCves.length === 0) {
       setCanSubmit(false);
-      handlesourceRequestChange(update);
+      handleSourceRequestChange(update);
       return;
     }
     for (let value of updatedCves) {
       if (value.name === undefined || value.name.trim() === '') {
         setCanSubmit(false);
-        handlesourceRequestChange(update);
+        handleSourceRequestChange(update);
         return;
       }
     }
@@ -109,7 +109,7 @@ export const SourceScanForm = ({ sourceRequest, handlesourceRequestChange, onNew
     for (let pair of metadata) {
       if (!pair.name || pair.name.trim() === '' || !pair.value || pair.value.trim() === '') {
         setCanSubmit(false);
-        handlesourceRequestChange(update);
+        handleSourceRequestChange(update);
         return;
       }
     }
@@ -117,14 +117,14 @@ export const SourceScanForm = ({ sourceRequest, handlesourceRequestChange, onNew
     const sourceRepo = updated['sourceRepo'];
     if (sourceRepo === undefined || sourceRepo.trim() === '') {
       setCanSubmit(false);
-      handlesourceRequestChange(update);
+      handleSourceRequestChange(update);
       return;
     }
 
     const commitId = updated['commitId'];
     if (commitId === undefined || commitId.trim() === '') {
       setCanSubmit(false);
-      handlesourceRequestChange(update);
+      handleSourceRequestChange(update);
       return;
     }
 

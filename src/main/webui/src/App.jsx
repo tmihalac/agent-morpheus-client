@@ -7,9 +7,9 @@ import { getUserName, logoutUser } from './services/UserClient';
 
 export default function App() {
 
-  const [vulnRequest, setVulnRequest] = React.useState({ sbomType: 'manual' });
-  const [productVulnRequest, setProductVulnRequest] = React.useState({ sbomType: 'manual' });
-  const [sourceRequest, setSourceRequest] = React.useState({});
+  const [vulnRequest, setVulnRequest] = React.useState({ analysisType: 'image', sbomType: 'manual' });
+  const [productVulnRequest, setProductVulnRequest] = React.useState({ analysisType: 'image', sbomType: 'manual' });
+  const [sourceRequest, setSourceRequest] = React.useState({ analysisType: 'source' });
   const [alerts, setAlerts] = React.useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const [userName, setUserName] = React.useState('');

@@ -24,11 +24,14 @@ const buildMetadata = (metadata) => {
 export const buildRequestJson = (data) => {
   return {
     id: data.id,
+    analysisType: data.analysisType,
     vulnerabilities: data.cves.map(e => e.name),
     metadata: buildMetadata(data.metadata),
     sbom_info_type: data.sbomType,
     image: data.image,
-    sbom: data.sbom
+    sbom: data.sbom,
+    sourceRepo: data.sourceRepo,
+    commitId: data.commitId
   };
 }
 
