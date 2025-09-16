@@ -159,7 +159,7 @@ public class ReportService {
   }
 
   public List<String> getReportIds(List<String> productIds) {
-    if (productIds == null || productIds.isEmpty()) {
+    if (Objects.isNull(productIds) || productIds.isEmpty()) {
       return new ArrayList<>();
     }
     return repository.getReportIdsByProduct(productIds);
@@ -300,6 +300,16 @@ public class ReportService {
     String tag = null;
     JsonNode sbomInfo = null;
 
+    String ecosystem = request.ecosystem();
+    if (Objects.isNull(ecosystem) || ecosystem.trim().isEmpty()) {
+      ecosystem = defaultEcosystem.orElse("");
+    }
+
+    String manifestPath = request.manifestPath();
+    if (Objects.isNull(manifestPath)) {
+      manifestPath = "";
+    }
+
     if ("image".equals(request.analysisType())) {
       if (Objects.nonNull(request.image())){
         return objectMapper.treeToValue(request.image(), Image.class);
@@ -332,13 +342,8 @@ public class ReportService {
     var srcInfo = List.of(
         new SourceInfo("code", sourceLocation, commitId, allIncludes, allExcludes),
         new SourceInfo("doc", sourceLocation, commitId, includes.get("Docs"), Collections.emptyList()));
-    
-    String ecosystem = request.ecosystem();
-    if (ecosystem == null || ecosystem.trim().isEmpty()) {
-      ecosystem = defaultEcosystem.orElse("");
-    }
 
-    return new Image(request.analysisType(), ecosystem, name, tag, srcInfo, sbomInfo);
+    return new Image(request.analysisType(), ecosystem, manifestPath, name, tag, srcInfo, sbomInfo);
   }
 
   private static String getSourceLocationFromMetadataLabels(HashMap<String, String> properties) {

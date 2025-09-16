@@ -12,7 +12,8 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
   const [isLoading, setIsLoading] = React.useState(false);
   const [canSubmit, setCanSubmit] = React.useState(false);
   const [ecosystem, setEcosystem] = React.useState(vulnRequest['ecosystem'] || '');
-
+  const [manifestPath, setManifestPath] = React.useState(vulnRequest['manifestPath'] || '');
+  
   const handleMetadataChange = (idx, field, newValue) => {
     const updatedMetadata = [...metadata];
     updatedMetadata[idx][field] = newValue;
@@ -67,6 +68,11 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
   const handleEcosystemChange = (_, ecosystem) => {
     setEcosystem(ecosystem);
     handleVulnRequestChange({ ecosystem: ecosystem });
+  }
+
+  const handleManifestPathChange = (value) => {
+    setManifestPath(value);
+    handleVulnRequestChange({ manifestPath: value });
   }
 
   const handleFileInputChange = (_, file) => {
@@ -200,6 +206,9 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
         <FormSelectOption key="empty" value="" label="Select a Programming Language (optional)" />
         {SupportedEcosystems.map((option, index) => <FormSelectOption isDisabled={option.disabled} key={index} value={option.value} label={option.label} />)}
       </FormSelect>
+    </FormGroup>
+    <FormGroup label="Manifest Path" fieldId="manifest-path">
+      <TextInput type="text" id="manifest-path" value={manifestPath} onChange={event => handleManifestPathChange(event.target.value)} placeholder="Path to manifest in repository (e.g. path/to/manifest.yaml)"></TextInput>
     </FormGroup>
     <FormGroup label="SBOM" isRequired fieldId="sbom-file">
       <FileUpload id="sbom-file" value={sbom}

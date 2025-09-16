@@ -20,6 +20,7 @@ public record ReportRequest(
     Map<String, String> metadata,
     String sourceRepo,
     String commitId,
-    String ecosystem) {
+    String ecosystem,
+    String manifestPath) {
 
 }

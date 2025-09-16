@@ -11,6 +11,7 @@ export const SourceScanForm = ({ sourceRequest, handleSourceRequestChange, onNew
   const [metadata, setMetadata] = React.useState(sourceRequest['metadata'] || [{}]);
   const [canSubmit, setCanSubmit] = React.useState(false);
   const [ecosystem, setEcosystem] = React.useState(sourceRequest['ecosystem'] || '');
+  const [manifestPath, setManifestPath] = React.useState(sourceRequest['manifestPath'] || '');
 
   const handleMetadataChange = (idx, field, newValue) => {
     const updatedMetadata = [...metadata];
@@ -65,6 +66,11 @@ export const SourceScanForm = ({ sourceRequest, handleSourceRequestChange, onNew
   const handleEcosystemChange = (_, ecosystem) => {
     setEcosystem(ecosystem);
     handleSourceRequestChange({ ecosystem: ecosystem });
+  }
+
+  const handleManifestPathChange = (value) => {
+    setManifestPath(value);
+    handleSourceRequestChange({ manifestPath: value });
   }
 
   const handleSourceRepoChange = (value) => {
@@ -189,6 +195,9 @@ export const SourceScanForm = ({ sourceRequest, handleSourceRequestChange, onNew
         <FormSelectOption key="empty" value="" label="Select a Programming Language (optional)" />
         {SupportedEcosystems.map((option, index) => <FormSelectOption isDisabled={option.disabled} key={index} value={option.value} label={option.label} />)}
       </FormSelect>
+    </FormGroup>
+    <FormGroup label="Manifest Path" fieldId="manifest-path">
+      <TextInput type="text" id="manifest-path" value={manifestPath} onChange={event => handleManifestPathChange(event.target.value)} placeholder="Path to manifest in repository (e.g. path/to/manifest.yaml)"></TextInput>
     </FormGroup>
     <FormGroup label="Source Repository" isRequired fieldId="source-repo">
       <TextInput isRequired type="text" id="source-repo" value={sourceRepo} onChange={event => handleSourceRepoChange(event.target.value)} placeholder="https://github.com/example/my-project"></TextInput>

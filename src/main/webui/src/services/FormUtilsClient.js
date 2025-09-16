@@ -50,7 +50,8 @@ const buildRequestJson = (data) => {
     sbom: data.sbom,
     sourceRepo: data.sourceRepo,
     commitId: data.commitId,
-    ecosystem: data.ecosystem
+    ecosystem: data.ecosystem,
+    manifestPath: data.manifestPath
   };
 }
 
