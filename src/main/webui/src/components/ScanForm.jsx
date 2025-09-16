@@ -2,13 +2,12 @@ import { ActionGroup, Button, FileUpload, Flex, FlexItem, Form, FormGroup, FormS
 import Remove2Icon from '@patternfly/react-icons/dist/esm/icons/remove2-icon';
 import AddCircleOIcon from '@patternfly/react-icons/dist/esm/icons/add-circle-o-icon';
 
-import { newMorpheusRequest, sbomTypes } from "../services/FormUtilsClient";
+import { newMorpheusRequest } from "../services/FormUtilsClient";
 
 export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) => {
   const [cves, setCves] = React.useState(vulnRequest['cves'] || [{}]);
   const [sbom, setSbom] = React.useState(vulnRequest['sbom'] || {});
   const [metadata, setMetadata] = React.useState(vulnRequest['metadata'] || [{}]);
-  const [sbomType, setSbomType] = React.useState(vulnRequest['sbomType'] || 'manual');
   const [filename, setFilename] = React.useState(vulnRequest['filename'] || '');
   const [isLoading, setIsLoading] = React.useState(false);
   const [canSubmit, setCanSubmit] = React.useState(false);
@@ -75,10 +74,6 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
       });
     }
     setFilename(file.name);
-  }
-  const handleSbomTypeChange = (_, type) => {
-    setSbomType(type);
-    onFormUpdated({ sbomType: type });
   }
   const handleFileReadStarted = (_event, _fileHandle) => {
     setIsLoading(true);
@@ -197,11 +192,6 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
         </FlexItem>
       </Flex>
     </FormSection>
-    <FormGroup label="SBOM Input Type" isRequired fieldId="sbom-type">
-      <FormSelect value={sbomType} id="sbom-type" onChange={handleSbomTypeChange}>
-        {sbomTypes.map((option, index) => <FormSelectOption isDisabled={option.disabled} key={index} value={option.value} label={option.label} />)}
-      </FormSelect>
-    </FormGroup>
     <FormGroup label="SBOM" isRequired fieldId="sbom-file">
       <FileUpload id="sbom-file" value={sbom}
         filename={filename}

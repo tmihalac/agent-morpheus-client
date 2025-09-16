@@ -1,19 +1,3 @@
-const CYCLONEDX_SBOM = 'cyclonedx+json';
-const MANUAL_SBOM = 'manual';
-
-export const sbomTypes = [
-  {
-    value: MANUAL_SBOM,
-    label: 'Manual (CSV)',
-    disabled: false
-  },
-  {
-    value: CYCLONEDX_SBOM,
-    label: 'CycloneDX (JSON)',
-    disabled: true
-  }
-];
-
 const buildMetadata = (metadata) => {
   if(metadata === undefined) {
     return {};
