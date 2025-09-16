@@ -86,6 +86,9 @@ public class ReportService {
   @ConfigProperty(name = "morpheus-ui.excludes.path", defaultValue = "excludes.json")
   String excludesPath;
 
+  @ConfigProperty(name = "morpheus-ui.ecosystem.default")
+  Optional<String> defaultEcosystem;
+
   @Inject
   ObjectMapper objectMapper;
 
@@ -329,7 +332,13 @@ public class ReportService {
     var srcInfo = List.of(
         new SourceInfo("code", sourceLocation, commitId, allIncludes, allExcludes),
         new SourceInfo("doc", sourceLocation, commitId, includes.get("Docs"), Collections.emptyList()));
-    return new Image(request.analysisType(), name, tag, srcInfo, sbomInfo);
+    
+    String ecosystem = request.ecosystem();
+    if (ecosystem == null || ecosystem.trim().isEmpty()) {
+      ecosystem = defaultEcosystem.orElse("");
+    }
+
+    return new Image(request.analysisType(), ecosystem, name, tag, srcInfo, sbomInfo);
   }
 
   private static String getSourceLocationFromMetadataLabels(HashMap<String, String> properties) {

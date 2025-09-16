@@ -6,6 +6,7 @@ import Remove2Icon from '@patternfly/react-icons/dist/esm/icons/remove2-icon';
 import AddCircleOIcon from '@patternfly/react-icons/dist/esm/icons/add-circle-o-icon';
 
 import { generateMorpheusRequest } from "../services/productScanClient";
+import { SupportedEcosystems } from "../services/FormUtilsClient";
 
 export const ProductScanForm = ({ productVulnRequest, handleProductVulnRequestChange, onNewAlert }) => {
   const [prodName, setProdName] = React.useState('');
@@ -20,6 +21,7 @@ export const ProductScanForm = ({ productVulnRequest, handleProductVulnRequestCh
   const [canSubmit, setCanSubmit] = React.useState(false);
   const [selectedComponents, setSelectedComponents] = React.useState([]);
   const [selectAll, setSelectAll] = React.useState(true);
+  const [ecosystem, setEcosystem] = React.useState(productVulnRequest['ecosystem'] || '');
 
   React.useEffect(() => {
     if (ociComponents.length > 0) {
@@ -45,7 +47,6 @@ export const ProductScanForm = ({ productVulnRequest, handleProductVulnRequestCh
       setCanSubmit(false);
       return;
     }
-
     for (let value of updatedCves) {
       if (!value.name || value.name.trim() === '') {
         setCanSubmit(false);
@@ -55,7 +56,7 @@ export const ProductScanForm = ({ productVulnRequest, handleProductVulnRequestCh
 
     const metadata = updated['metadata'] || [];
     for (let pair of metadata) {
-            if (!pair.name || pair.name.trim() === '' || !pair.value || pair.value.trim() === '') {
+      if (!pair.name || pair.name.trim() === '' || !pair.value || pair.value.trim() === '') {
         setCanSubmit(false);
         return;
       }
@@ -118,6 +119,11 @@ export const ProductScanForm = ({ productVulnRequest, handleProductVulnRequestCh
       handleProductVulnRequestChange({ cves: updatedElems });
       return updatedElems
     });
+  }
+
+  const handleEcosystemChange = (_, ecosystem) => {
+    setEcosystem(ecosystem);
+    handleProductVulnRequestChange({ ecosystem: ecosystem });
   }
 
   const handleProductSbomParsing = sbom => {
@@ -378,6 +384,12 @@ export const ProductScanForm = ({ productVulnRequest, handleProductVulnRequestCh
         </FlexItem>
       </Flex>
     </FormSection>
+    <FormGroup label="Ecosystem" fieldId="ecosystem">
+      <FormSelect value={ecosystem} id="ecosystem" onChange={handleEcosystemChange}>
+        <FormSelectOption key="empty" value="" label="Select a Programming Language (optional)" />
+        {SupportedEcosystems.map((option, index) => <FormSelectOption isDisabled={option.disabled} key={index} value={option.value} label={option.label} />)}
+      </FormSelect>
+    </FormGroup>
     <FormGroup label="SBOM" isRequired fieldId="sbom-file">
       <FileUpload id="sbom-file"
         filename={filename}

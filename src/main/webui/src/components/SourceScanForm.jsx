@@ -2,7 +2,7 @@ import { ActionGroup, Button, FileUpload, Flex, FlexItem, Form, FormGroup, FormS
 import Remove2Icon from '@patternfly/react-icons/dist/esm/icons/remove2-icon';
 import AddCircleOIcon from '@patternfly/react-icons/dist/esm/icons/add-circle-o-icon';
 
-import { newMorpheusRequest } from "../services/FormUtilsClient";
+import { newMorpheusRequest, SupportedEcosystems } from "../services/FormUtilsClient";
 
 export const SourceScanForm = ({ sourceRequest, handleSourceRequestChange, onNewAlert }) => {
   const [cves, setCves] = React.useState(sourceRequest['cves'] || [{}]);
@@ -10,6 +10,7 @@ export const SourceScanForm = ({ sourceRequest, handleSourceRequestChange, onNew
   const [commitId, setCommitId] = React.useState(sourceRequest['commitId'] || '');
   const [metadata, setMetadata] = React.useState(sourceRequest['metadata'] || [{}]);
   const [canSubmit, setCanSubmit] = React.useState(false);
+  const [ecosystem, setEcosystem] = React.useState(sourceRequest['ecosystem'] || '');
 
   const handleMetadataChange = (idx, field, newValue) => {
     const updatedMetadata = [...metadata];
@@ -61,6 +62,11 @@ export const SourceScanForm = ({ sourceRequest, handleSourceRequestChange, onNew
     });
   }
 
+  const handleEcosystemChange = (_, ecosystem) => {
+    setEcosystem(ecosystem);
+    handleSourceRequestChange({ ecosystem: ecosystem });
+  }
+
   const handleSourceRepoChange = (value) => {
     setSourceRepo(value);
     onFormUpdated({ sourceRepo: value });
@@ -86,21 +92,17 @@ export const SourceScanForm = ({ sourceRequest, handleSourceRequestChange, onNew
   }
 
   const onFormUpdated = (update) => {
-    if(update === undefined) {
-      setCanSubmit(false);
-    }
+
     const updated = handleSourceRequestChange(update);
     
     const updatedCves = updated['cves'];    
     if (updatedCves === undefined || updatedCves.length === 0) {
       setCanSubmit(false);
-      handleSourceRequestChange(update);
       return;
     }
     for (let value of updatedCves) {
       if (value.name === undefined || value.name.trim() === '') {
         setCanSubmit(false);
-        handleSourceRequestChange(update);
         return;
       }
     }
@@ -109,7 +111,6 @@ export const SourceScanForm = ({ sourceRequest, handleSourceRequestChange, onNew
     for (let pair of metadata) {
       if (!pair.name || pair.name.trim() === '' || !pair.value || pair.value.trim() === '') {
         setCanSubmit(false);
-        handleSourceRequestChange(update);
         return;
       }
     }
@@ -117,14 +118,12 @@ export const SourceScanForm = ({ sourceRequest, handleSourceRequestChange, onNew
     const sourceRepo = updated['sourceRepo'];
     if (sourceRepo === undefined || sourceRepo.trim() === '') {
       setCanSubmit(false);
-      handleSourceRequestChange(update);
       return;
     }
 
     const commitId = updated['commitId'];
     if (commitId === undefined || commitId.trim() === '') {
       setCanSubmit(false);
-      handleSourceRequestChange(update);
       return;
     }
 
@@ -185,6 +184,12 @@ export const SourceScanForm = ({ sourceRequest, handleSourceRequestChange, onNew
         </FlexItem>
       </Flex>
     </FormSection>
+    <FormGroup label="Ecosystem" fieldId="ecosystem">
+      <FormSelect value={ecosystem} id="ecosystem" onChange={handleEcosystemChange}>
+        <FormSelectOption key="empty" value="" label="Select a Programming Language (optional)" />
+        {SupportedEcosystems.map((option, index) => <FormSelectOption isDisabled={option.disabled} key={index} value={option.value} label={option.label} />)}
+      </FormSelect>
+    </FormGroup>
     <FormGroup label="Source Repository" isRequired fieldId="source-repo">
       <TextInput isRequired type="text" id="source-repo" value={sourceRepo} onChange={event => handleSourceRepoChange(event.target.value)} placeholder="https://github.com/example/my-project"></TextInput>
     </FormGroup>

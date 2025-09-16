@@ -1,6 +1,5 @@
 package com.redhat.ecosystemappeng.morpheus.rest;
 
-import java.io.IOException;
 import java.util.Objects;
 
 import org.jboss.logging.Logger;

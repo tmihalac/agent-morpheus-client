@@ -19,6 +19,7 @@ public record ReportRequest(
     @JsonProperty("sbom_info_type") SbomInfoType sbomInfoType, 
     Map<String, String> metadata,
     String sourceRepo,
-    String commitId) {
+    String commitId,
+    String ecosystem) {
 
 }

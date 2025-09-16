@@ -2,7 +2,7 @@ import { ActionGroup, Button, FileUpload, Flex, FlexItem, Form, FormGroup, FormS
 import Remove2Icon from '@patternfly/react-icons/dist/esm/icons/remove2-icon';
 import AddCircleOIcon from '@patternfly/react-icons/dist/esm/icons/add-circle-o-icon';
 
-import { newMorpheusRequest } from "../services/FormUtilsClient";
+import { newMorpheusRequest, SupportedEcosystems } from "../services/FormUtilsClient";
 
 export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) => {
   const [cves, setCves] = React.useState(vulnRequest['cves'] || [{}]);
@@ -11,6 +11,7 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
   const [filename, setFilename] = React.useState(vulnRequest['filename'] || '');
   const [isLoading, setIsLoading] = React.useState(false);
   const [canSubmit, setCanSubmit] = React.useState(false);
+  const [ecosystem, setEcosystem] = React.useState(vulnRequest['ecosystem'] || '');
 
   const handleMetadataChange = (idx, field, newValue) => {
     const updatedMetadata = [...metadata];
@@ -63,6 +64,11 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
     });
   }
 
+  const handleEcosystemChange = (_, ecosystem) => {
+    setEcosystem(ecosystem);
+    handleVulnRequestChange({ ecosystem: ecosystem });
+  }
+
   const handleFileInputChange = (_, file) => {
     const fileReader = new FileReader();
     fileReader.readAsText(file, "UTF-8");
@@ -85,7 +91,7 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
   const handleClear = _ => {
     setFilename('');
     setSbom('');
-    onFormUpdated();
+    onFormUpdated({ sbom: '' });
   }
 
   const onSubmitForm = () => {
@@ -103,21 +109,17 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
   }
 
   const onFormUpdated = (update) => {
-    if(update === undefined) {
-      setCanSubmit(false);
-    }
+
     const updated = handleVulnRequestChange(update);
     
     const updatedCves = updated['cves'];    
     if (updatedCves === undefined || updatedCves.length === 0) {
       setCanSubmit(false);
-      handleVulnRequestChange(update);
       return;
     }
     for (let value of updatedCves) {
       if (value.name === undefined || value.name.trim() === '') {
         setCanSubmit(false);
-        handleVulnRequestChange(update);
         return;
       }
     }
@@ -126,16 +128,17 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
     for (let pair of metadata) {
       if (!pair.name || pair.name.trim() === '' || !pair.value || pair.value.trim() === '') {
         setCanSubmit(false);
-        handleVulnRequestChange(update);
         return;
       }
     }
 
-    if (updated.sbom === undefined || updated.sbom === '') {
+    const updatedSbom = updated['sbom'];
+    if (updatedSbom === undefined || updatedSbom === '') {
       setCanSubmit(false);
-    } else {
-      setCanSubmit(true);
+      return;
     }
+
+    setCanSubmit(true);
   }
 
   return <Form isHorizontal>
@@ -192,6 +195,12 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
         </FlexItem>
       </Flex>
     </FormSection>
+    <FormGroup label="Ecosystem" fieldId="ecosystem">
+      <FormSelect value={ecosystem} id="ecosystem" onChange={handleEcosystemChange}>
+        <FormSelectOption key="empty" value="" label="Select a Programming Language (optional)" />
+        {SupportedEcosystems.map((option, index) => <FormSelectOption isDisabled={option.disabled} key={index} value={option.value} label={option.label} />)}
+      </FormSelect>
+    </FormGroup>
     <FormGroup label="SBOM" isRequired fieldId="sbom-file">
       <FileUpload id="sbom-file" value={sbom}
         filename={filename}

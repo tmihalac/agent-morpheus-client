@@ -11,6 +11,7 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 @RegisterForReflection
 public record Image(
     @JsonProperty("analysis_type") String analysisType,
+    String ecosystem,
     String name, 
     String tag, 
     @JsonProperty("source_info") Collection<SourceInfo> sourceInfo, 

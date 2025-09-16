@@ -1,3 +1,37 @@
+const JAVA = 'java';
+const PYTHON = 'python';
+const GO = 'go';
+const JAVASCRIPT = 'javascript';
+const C = 'c';
+
+export const SupportedEcosystems = [
+  {
+    value: JAVA,
+    label: 'Java',
+    disabled: false
+  },
+  {
+    value: PYTHON,
+    label: 'Python',
+    disabled: false
+  },
+  {
+    value: GO,
+    label: 'Go',
+    disabled: false
+  },
+  {
+    value: JAVASCRIPT,
+    label: 'Javascript',
+    disabled: false
+  },
+  {
+    value: C,
+    label: 'C',
+    disabled: false
+  }
+];
+
 const buildMetadata = (metadata) => {
   if(metadata === undefined) {
     return {};
@@ -5,7 +39,7 @@ const buildMetadata = (metadata) => {
   return Object.fromEntries(metadata.map((e) => [e.name, e.value]));
 };
 
-export const buildRequestJson = (data) => {
+const buildRequestJson = (data) => {
   return {
     id: data.id,
     analysisType: data.analysisType,
@@ -15,7 +49,8 @@ export const buildRequestJson = (data) => {
     image: data.image,
     sbom: data.sbom,
     sourceRepo: data.sourceRepo,
-    commitId: data.commitId
+    commitId: data.commitId,
+    ecosystem: data.ecosystem
   };
 }
 
