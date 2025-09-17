@@ -112,7 +112,8 @@ spec:
               --ulimit nofile=550000:550000
               --env=EXPLOIT_IQ_CLIENT_VERSION={{git_tag}}
               --env=INCLUDE_SWAGGER_UI=false
-              
+              --env=QUARKUS_SWAGGER_UI_ALWAYS_INCLUDE=false
+
         taskRef:
           resolver: cluster
           params:
