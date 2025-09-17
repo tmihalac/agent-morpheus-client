@@ -2,6 +2,7 @@ package com.redhat.ecosystemappeng.morpheus.rest;
 
 import java.util.Objects;
 
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +19,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+@SecurityRequirement(name = "jwt")
 @Path("/generate-sbom")
 @Consumes(MediaType.TEXT_PLAIN)
 @Produces(MediaType.APPLICATION_JSON)

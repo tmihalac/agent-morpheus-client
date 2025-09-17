@@ -12,7 +12,9 @@ import java.time.Instant;
 import java.util.Date;
 
 import com.redhat.ecosystemappeng.morpheus.service.UserService;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 
+@SecurityRequirement(name = "jwt")
 @Path("/user")
 public class TokenResource {
 

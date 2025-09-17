@@ -8,6 +8,7 @@ import java.util.Objects;
 
 import com.redhat.ecosystemappeng.morpheus.tracing.TraceToMdc;
 import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
@@ -41,7 +42,7 @@ import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.core.Response.Status;
 
 @SecurityScheme(securitySchemeName = "jwt", type = SecuritySchemeType.HTTP, scheme = "bearer", bearerFormat = "jwt", description = "Please enter your JWT Token without Bearer")
-
+@SecurityRequirement(name = "jwt")
 @Path("/reports")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
