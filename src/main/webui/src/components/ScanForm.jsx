@@ -208,7 +208,7 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
       </FormSelect>
     </FormGroup>
     <FormGroup label="Manifest Path" fieldId="manifest-path">
-      <TextInput type="text" id="manifest-path" value={manifestPath} onChange={event => handleManifestPathChange(event.target.value)} placeholder="Path to manifest in repository (e.g. path/to/manifest.yaml)"></TextInput>
+      <TextInput type="text" id="manifest-path" value={manifestPath} onChange={event => handleManifestPathChange(event.target.value)} placeholder="Path to manifest in repository, e.g. path/to/manifest.yaml (optional)"></TextInput>
     </FormGroup>
     <FormGroup label="SBOM" isRequired fieldId="sbom-file">
       <FileUpload id="sbom-file" value={sbom}

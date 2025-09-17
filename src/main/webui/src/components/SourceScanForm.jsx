@@ -197,7 +197,7 @@ export const SourceScanForm = ({ sourceRequest, handleSourceRequestChange, onNew
       </FormSelect>
     </FormGroup>
     <FormGroup label="Manifest Path" fieldId="manifest-path">
-      <TextInput type="text" id="manifest-path" value={manifestPath} onChange={event => handleManifestPathChange(event.target.value)} placeholder="Path to manifest in repository (e.g. path/to/manifest.yaml)"></TextInput>
+      <TextInput type="text" id="manifest-path" value={manifestPath} onChange={event => handleManifestPathChange(event.target.value)} placeholder="Path to manifest in repository, e.g. path/to/manifest.yaml (optional)"></TextInput>
     </FormGroup>
     <FormGroup label="Source Repository" isRequired fieldId="source-repo">
       <TextInput isRequired type="text" id="source-repo" value={sourceRepo} onChange={event => handleSourceRepoChange(event.target.value)} placeholder="https://github.com/example/my-project"></TextInput>
