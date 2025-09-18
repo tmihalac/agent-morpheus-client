@@ -9,7 +9,7 @@ metadata:
     pipelinesascode.tekton.dev/on-event: "[push]"
 
     # The branch or tag we are targeting (ie: main, refs/tags/*)
-    pipelinesascode.tekton.dev/on-target-branch: "[main]"
+    pipelinesascode.tekton.dev/on-target-branch: "[main, rh-aiq-main]"
 
     # Fetch the git-clone task from hub, we are able to reference later on it
     # with taskRef and it will automatically be embedded into our pipeline.
@@ -83,6 +83,7 @@ spec:
           - name: BUILD_EXTRA_ARGS
             value: >-
               --ulimit nofile=550000:550000
+              --env=QUARKUS_SWAGGER_UI_ALWAYS_INCLUDE=true
         taskRef:
           resolver: cluster
           params:

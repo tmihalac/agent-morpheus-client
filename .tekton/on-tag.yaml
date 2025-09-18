@@ -2,14 +2,14 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: morpheus-client-on-pr
+  name: morpheus-client-on-tag-push
   annotations:
     # The event we are targeting as seen from the webhook payload
     # this can be an array too, i.e: [pull_request, push]
-    pipelinesascode.tekton.dev/on-event: "[pull_request]"
+    pipelinesascode.tekton.dev/on-event: "[push]"
 
     # The branch or tag we are targeting (ie: main, refs/tags/*)
-    pipelinesascode.tekton.dev/on-target-branch: "[main, rh-aiq-main]"
+    pipelinesascode.tekton.dev/on-target-branch: "[refs/tags/*]"
 
     # Fetch the git-clone task from hub, we are able to reference later on it
     # with taskRef and it will automatically be embedded into our pipeline.
@@ -25,10 +25,10 @@ spec:
       value: "{{ repo_url }}"
     - name: revision
       value: "{{ revision }}"
-    - name: image-expires-after
-      value: 5d
     - name: output-image
-      value: quay.io/ecosystem-appeng/agent-morpheus-client:on-pr-{{revision}}
+      value: quay.io/ecosystem-appeng/agent-morpheus-client
+    - name: tag-name
+      value: "{{git_tag}}"
     - name: path-context
       value: .
     - name: dockerfile
@@ -37,6 +37,7 @@ spec:
     params:
       - name: repo_url
       - name: revision
+      - name: tag-name
       - name: output-image
         description: Fully Qualified Output Image
         type: string
@@ -48,9 +49,6 @@ spec:
         default: Dockerfile
         description: Path to the Dockerfile inside the context specified by parameter path-context
         type: string
-      - name: image-expires-after
-        default: ""
-        description: Image tag expiration time, time values could be something like 1h, 2d, 3w for hours, days, and weeks, respectively.
     workspaces:
       - name: source
     tasks:
@@ -72,12 +70,36 @@ spec:
             value: $(params.repo_url)
           - name: REVISION
             value: $(params.revision)
+      - name: format-image-name
+        params:
+          - name: image_name
+            value: $(params.output-image)
+          - name: tag_name
+            value: $(params.tag-name)
+        taskSpec:
+          params:
+            - name: image_name
+              type: string
+            - name: tag_name
+              type: string
+          results:
+            - name: target-image
+          steps:
+            - name: format-image
+              image: registry.redhat.io/ubi9/ubi-minimal:9.4
+              script: |
+                #!/usr/bin/env bash
+                IMAGE="$(params.image_name):$(echo $(params.tag_name) | sed 's|refs/tags/||')"
+                echo "Building image: $IMAGE"
+
+                # Set the formatted image as an output
+                echo -n "${IMAGE}" > "$(results.target-image.path)"
       - name: buildah
         runAfter:
           - fetch-repository
         params:
           - name: IMAGE
-            value: $(params.output-image)
+            value: $(tasks.format-image-name.results.target-image)
           - name: DOCKERFILE
             value: $(params.dockerfile)
           - name: CONTEXT
@@ -87,9 +109,11 @@ spec:
               registry.redhat.io/rhel8/buildah@sha256:aac6629389db17e99894c5bee0da01d4c8065d11d8c6f6e1602f9484290baa70
           - name: BUILD_EXTRA_ARGS
             value: >-
-              --label=quay.expires-after=$(params.image-expires-after)
               --ulimit nofile=550000:550000
-              --env=QUARKUS_SWAGGER_UI_ALWAYS_INCLUDE=true
+              --env=EXPLOIT_IQ_CLIENT_VERSION={{git_tag}}
+              --env=INCLUDE_SWAGGER_UI=false
+              --env=QUARKUS_SWAGGER_UI_ALWAYS_INCLUDE=false
+
         taskRef:
           resolver: cluster
           params:

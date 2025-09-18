@@ -15,8 +15,10 @@ import jakarta.ws.rs.core.Response;
 
 import java.util.List;
 
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.jboss.logging.Logger;
 
+@SecurityRequirement(name = "jwt")
 @Path("/pre-processing")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
