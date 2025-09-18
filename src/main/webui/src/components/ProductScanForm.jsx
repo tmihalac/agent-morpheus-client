@@ -5,9 +5,7 @@ import { SearchIcon } from '@patternfly/react-icons/dist/esm/icons/search-icon';
 import Remove2Icon from '@patternfly/react-icons/dist/esm/icons/remove2-icon';
 import AddCircleOIcon from '@patternfly/react-icons/dist/esm/icons/add-circle-o-icon';
 
-import { sbomTypes } from "../services/FormUtilsClient";
 import { generateMorpheusRequest } from "../services/productScanClient";
-import { listProducts } from "../services/ProductReportClient";
 
 export const ProductScanForm = ({ productVulnRequest, handleProductVulnRequestChange, onNewAlert }) => {
   const [prodName, setProdName] = React.useState('');
@@ -15,7 +13,6 @@ export const ProductScanForm = ({ productVulnRequest, handleProductVulnRequestCh
   const [prodId, setProdId] = React.useState('');
   const [cves, setCves] = React.useState(productVulnRequest['cves'] || [{}]);
   const [metadata, setMetadata] = React.useState(productVulnRequest['metadata'] || [{}]);
-  const [sbomType, setSbomType] = React.useState(productVulnRequest['sbomType'] || 'manual');
   const [ociComponents, setOciComponents] = React.useState([]);
   const [totComponents, setTotComponents] = React.useState(0);
   const [filename, setFilename] = React.useState('');
@@ -48,7 +45,6 @@ export const ProductScanForm = ({ productVulnRequest, handleProductVulnRequestCh
       setCanSubmit(false);
       return;
     }
-
     for (let value of updatedCves) {
       if (!value.name || value.name.trim() === '') {
         setCanSubmit(false);
@@ -58,7 +54,7 @@ export const ProductScanForm = ({ productVulnRequest, handleProductVulnRequestCh
 
     const metadata = updated['metadata'] || [];
     for (let pair of metadata) {
-            if (!pair.name || pair.name.trim() === '' || !pair.value || pair.value.trim() === '') {
+      if (!pair.name || pair.name.trim() === '' || !pair.value || pair.value.trim() === '') {
         setCanSubmit(false);
         return;
       }
@@ -121,11 +117,6 @@ export const ProductScanForm = ({ productVulnRequest, handleProductVulnRequestCh
       handleProductVulnRequestChange({ cves: updatedElems });
       return updatedElems
     });
-  }
-
-  const handleSbomTypeChange = (_, type) => {
-    setSbomType(type);
-    handleProductVulnRequestChange({ sbomType: type });
   }
 
   const handleProductSbomParsing = sbom => {
@@ -386,11 +377,6 @@ export const ProductScanForm = ({ productVulnRequest, handleProductVulnRequestCh
         </FlexItem>
       </Flex>
     </FormSection>
-    <FormGroup label="SBOM Input Type" isRequired fieldId="sbom-type">
-      <FormSelect value={sbomType} id="sbom-type" onChange={handleSbomTypeChange}>
-        {sbomTypes.map((option, index) => <FormSelectOption isDisabled={option.disabled} key={index} value={option.value} label={option.label} />)}
-      </FormSelect>
-    </FormGroup>
     <FormGroup label="SBOM" isRequired fieldId="sbom-file">
       <FileUpload id="sbom-file"
         filename={filename}

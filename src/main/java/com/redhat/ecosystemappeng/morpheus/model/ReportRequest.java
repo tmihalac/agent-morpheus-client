@@ -12,10 +12,15 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 @RegisterForReflection
 public record ReportRequest(
     String id, 
+    String analysisType,
     Collection<String> vulnerabilities, 
     JsonNode image,
     JsonNode sbom,
     @JsonProperty("sbom_info_type") SbomInfoType sbomInfoType, 
-    Map<String, String> metadata) {
+    Map<String, String> metadata,
+    String sourceRepo,
+    String commitId,
+    String ecosystem,
+    String manifestPath) {
 
 }

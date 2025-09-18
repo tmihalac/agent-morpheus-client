@@ -4,16 +4,15 @@ import AddCircleOIcon from '@patternfly/react-icons/dist/esm/icons/add-circle-o-
 
 import { newMorpheusRequest, SupportedEcosystems } from "../services/FormUtilsClient";
 
-export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) => {
-  const [cves, setCves] = React.useState(vulnRequest['cves'] || [{}]);
-  const [sbom, setSbom] = React.useState(vulnRequest['sbom'] || {});
-  const [metadata, setMetadata] = React.useState(vulnRequest['metadata'] || [{}]);
-  const [filename, setFilename] = React.useState(vulnRequest['filename'] || '');
-  const [isLoading, setIsLoading] = React.useState(false);
+export const SourceScanForm = ({ sourceRequest, handleSourceRequestChange, onNewAlert }) => {
+  const [cves, setCves] = React.useState(sourceRequest['cves'] || [{}]);
+  const [sourceRepo, setSourceRepo] = React.useState(sourceRequest['sourceRepo'] || '');
+  const [commitId, setCommitId] = React.useState(sourceRequest['commitId'] || '');
+  const [metadata, setMetadata] = React.useState(sourceRequest['metadata'] || [{}]);
   const [canSubmit, setCanSubmit] = React.useState(false);
-  const [ecosystem, setEcosystem] = React.useState(vulnRequest['ecosystem'] || '');
-  const [manifestPath, setManifestPath] = React.useState(vulnRequest['manifestPath'] || '');
-  
+  const [ecosystem, setEcosystem] = React.useState(sourceRequest['ecosystem'] || '');
+  const [manifestPath, setManifestPath] = React.useState(sourceRequest['manifestPath'] || '');
+
   const handleMetadataChange = (idx, field, newValue) => {
     const updatedMetadata = [...metadata];
     updatedMetadata[idx][field] = newValue;
@@ -36,7 +35,6 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
   }
 
   const handleCveChange = (idx, name) => {
-
     setCves((prevElements) => {
       const updatedElems = prevElements.map((element, index) =>
         index === idx ? { ...element, name: name } : element
@@ -67,42 +65,27 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
 
   const handleEcosystemChange = (_, ecosystem) => {
     setEcosystem(ecosystem);
-    handleVulnRequestChange({ ecosystem: ecosystem });
+    handleSourceRequestChange({ ecosystem: ecosystem });
   }
 
   const handleManifestPathChange = (value) => {
     setManifestPath(value);
-    handleVulnRequestChange({ manifestPath: value });
+    handleSourceRequestChange({ manifestPath: value });
   }
 
-  const handleFileInputChange = (_, file) => {
-    const fileReader = new FileReader();
-    fileReader.readAsText(file, "UTF-8");
-    fileReader.onload = e => {
-      const loadedSbom = JSON.parse(e.target.result)
-      setSbom(loadedSbom);
-      onFormUpdated({
-        sbom: loadedSbom
-      });
-    }
-    setFilename(file.name);
+  const handleSourceRepoChange = (value) => {
+    setSourceRepo(value);
+    onFormUpdated({ sourceRepo: value });
   }
-  const handleFileReadStarted = (_event, _fileHandle) => {
-    setIsLoading(true);
-  };
-  const handleFileReadFinished = (_event, _fileHandle) => {
-    setIsLoading(false);
-  };
-
-  const handleClear = _ => {
-    setFilename('');
-    setSbom('');
-    onFormUpdated({ sbom: '' });
+  
+  const handleCommitIdChange = (value) => {
+    setCommitId(value);
+    onFormUpdated({ commitId: value });
   }
 
   const onSubmitForm = () => {
     setCanSubmit(false);
-    newMorpheusRequest(vulnRequest)
+    newMorpheusRequest(sourceRequest)
       .then(response => {
         if (response.ok) {
           onNewAlert('success', 'Analysis request sent to Morpheus');
@@ -116,7 +99,7 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
 
   const onFormUpdated = (update) => {
 
-    const updated = handleVulnRequestChange(update);
+    const updated = handleSourceRequestChange(update);
     
     const updatedCves = updated['cves'];    
     if (updatedCves === undefined || updatedCves.length === 0) {
@@ -138,8 +121,14 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
       }
     }
 
-    const updatedSbom = updated['sbom'];
-    if (updatedSbom === undefined || updatedSbom === '') {
+    const sourceRepo = updated['sourceRepo'];
+    if (sourceRepo === undefined || sourceRepo.trim() === '') {
+      setCanSubmit(false);
+      return;
+    }
+
+    const commitId = updated['commitId'];
+    if (commitId === undefined || commitId.trim() === '') {
       setCanSubmit(false);
       return;
     }
@@ -210,16 +199,11 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
     <FormGroup label="Manifest Path" fieldId="manifest-path">
       <TextInput type="text" id="manifest-path" value={manifestPath} onChange={event => handleManifestPathChange(event.target.value)} placeholder="Path to manifest in repository, e.g. path/to/manifest.yaml (optional)"></TextInput>
     </FormGroup>
-    <FormGroup label="SBOM" isRequired fieldId="sbom-file">
-      <FileUpload id="sbom-file" value={sbom}
-        filename={filename}
-        onReadStarted={handleFileReadStarted}
-        onReadFinished={handleFileReadFinished}
-        isLoading={isLoading}
-        filenamePlaceholder="Drag and drop or upload a Syft generated CycloneDX SBOM JSON file"
-        onFileInputChange={handleFileInputChange}
-        onClearClick={handleClear}
-        browseButtonText="Upload" />
+    <FormGroup label="Source Repository" isRequired fieldId="source-repo">
+      <TextInput isRequired type="text" id="source-repo" value={sourceRepo} onChange={event => handleSourceRepoChange(event.target.value)} placeholder="https://github.com/example/my-project"></TextInput>
+    </FormGroup>
+    <FormGroup label="Commit ID" isRequired fieldId="commit-id">
+      <TextInput isRequired type="text" id="commit-id" value={commitId} onChange={event => handleCommitIdChange(event.target.value)} placeholder="abc123def456789012345678901234567890abcd"></TextInput>
     </FormGroup>
     <ActionGroup>
       <Button variant="primary" isDisabled={!canSubmit} onClick={onSubmitForm}>Submit</Button>
