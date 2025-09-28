@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -17,6 +18,10 @@ public class GenerateSbomService {
     
     private static final Logger LOGGER = Logger.getLogger(PreProcessingService.class);
     private static final int EXIT_CODE_SUCCESS = 0;
+    private static final String SYFT_CACHE_DIR_ENV = "SYFT_CACHE_DIR";
+
+    @ConfigProperty(name = "morpheus.syft.cache.dir")
+    String syftCacheDir;
 
     @Inject
     ObjectMapper objectMapper;
@@ -31,6 +36,7 @@ public class GenerateSbomService {
             "cyclonedx-json",
         };
         ProcessBuilder pb = new ProcessBuilder(command);
+        pb.environment().put(SYFT_CACHE_DIR_ENV, syftCacheDir);
         Process process = pb.start();
 
         StringBuilder output = new StringBuilder();
