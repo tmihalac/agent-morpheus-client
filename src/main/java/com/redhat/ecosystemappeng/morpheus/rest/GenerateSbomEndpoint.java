@@ -2,6 +2,14 @@ package com.redhat.ecosystemappeng.morpheus.rest;
 
 import java.util.Objects;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.jboss.logging.Logger;
 
@@ -18,6 +26,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.QueryParam;
 
 @SecurityRequirement(name = "jwt")
 @Path("/generate-sbom")
@@ -34,7 +43,50 @@ public class GenerateSbomEndpoint {
     GenerateSbomService generateSbomService;
 
     @POST
-    public Response generateSbom(String image) {
+    @Operation(
+        summary = "Generate SBOM", 
+        description = "Generates a Software Bill of Materials (SBOM) for a container image")
+    @APIResponses({
+        @APIResponse(
+            responseCode = "200",
+            description = "SBOM generated successfully",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                schema = @Schema(type = SchemaType.OBJECT),
+                examples = @ExampleObject(
+                    name = "CycloneDX SBOM",
+                    value = """
+                    {
+                    "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+                    "bomFormat": "CycloneDX",
+                    "specVersion": "1.6",
+                    "serialNumber": "generated UUID",
+                    "version": 1,
+                    "metadata": {
+                        "timestamp": "current timestamp",
+                        "tools": [],
+                        "component": {},
+                        "properties": []
+                    },
+                    "components": [],
+                    "dependencies": []
+                    }
+                    """
+                )
+            )
+        ),
+        @APIResponse(
+            responseCode = "500", 
+            description = "SBOM generation failed"
+        )
+    })
+    public Response generateSbom(
+        @Parameter(
+            description = "Container image name and tag", 
+            required = true,
+            example = "nginx:latest"
+        )
+        @QueryParam("image") String image) {
         if (Objects.isNull(image) || image.isEmpty()) {
             return Response.status(Status.BAD_REQUEST)
                 .entity(objectMapper.createObjectNode()

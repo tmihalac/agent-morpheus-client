@@ -1,5 +1,12 @@
 package com.redhat.ecosystemappeng.morpheus.rest;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.ecosystemappeng.morpheus.model.ReportData;
@@ -10,6 +17,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -33,7 +41,26 @@ public class PreProcessingEndpoint {
   ObjectMapper objectMapper;
 
   @POST
-  public Response submit(List<ReportData> payloads) {
+  @Operation(
+    summary = "Submit report requests for pre-processing", 
+    description = "Submits a list of report requests for pre-processing to the Component Syncer")
+  @APIResponses({
+    @APIResponse(
+      responseCode = "200", 
+      description = "Pre-processing request accepted by the Component Syncer"
+    ),
+    @APIResponse(
+      responseCode = "500", 
+      description = "Pre-processing request failed to be sent to the Component Syncer"
+    )
+  })
+  public Response submit(
+    @RequestBody(
+      description = "List of report requests for pre-processing",
+      required = true,
+      content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ReportData.class))
+    )
+    List<ReportData> payloads) {
     try {
       JsonNode parsedPayloads = preProcessingService.parse(payloads);
       List<String> ids = preProcessingService.getIds(payloads);
@@ -51,7 +78,10 @@ public class PreProcessingEndpoint {
       return res;
     } catch (Exception e) {
       LOGGER.error("Failed to submit payloads for pre-processing", e);
-      return Response.serverError().entity(objectMapper.createObjectNode().put("error", e.getMessage())).build();
+      return Response.status(Status.INTERNAL_SERVER_ERROR)
+                .entity(objectMapper.createObjectNode()
+                .put("error", e.getMessage()))
+                .build();
     }
   }
 }

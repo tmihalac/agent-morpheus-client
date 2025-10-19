@@ -1,5 +1,12 @@
 package com.redhat.ecosystemappeng.morpheus.rest;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.ecosystemappeng.morpheus.model.Product;
 import com.redhat.ecosystemappeng.morpheus.service.ProductService;
@@ -32,7 +39,26 @@ public class ProductEndpoint {
   ObjectMapper objectMapper;
 
   @POST
-  public Response save(Product product) {
+  @Operation(
+    summary = "Save product", 
+    description = "Saves product metadata to database")
+  @APIResponses({
+    @APIResponse(
+      responseCode = "200", 
+      description = "Product metadata saved to database"
+    ),
+    @APIResponse(
+      responseCode = "500", 
+      description = "Product metadata failed to be saved to database"
+    )
+  })
+  public Response save(
+    @RequestBody(
+      description = "Product metadata to save",
+      required = true,
+      content = @Content(schema = @Schema(implementation = Product.class))
+    )
+    Product product) {
     try {
       productService.save(product);
       return Response.accepted().build();
