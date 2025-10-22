@@ -51,7 +51,6 @@ public class GenerateSbomEndpoint {
             responseCode = "200",
             description = "SBOM generated successfully",
             content = @Content(
-                mediaType = MediaType.APPLICATION_JSON,
                 schema = @Schema(type = SchemaType.OBJECT),
                 examples = @ExampleObject(
                     name = "CycloneDX SBOM",
@@ -76,8 +75,12 @@ public class GenerateSbomEndpoint {
             )
         ),
         @APIResponse(
+            responseCode = "400", 
+            description = "Image has not been provided"
+        ),
+        @APIResponse(
             responseCode = "500", 
-            description = "SBOM generation failed"
+            description = "Internal server error"
         )
     })
     public Response generateSbom(

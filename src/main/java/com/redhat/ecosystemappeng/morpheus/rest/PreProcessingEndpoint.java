@@ -51,7 +51,7 @@ public class PreProcessingEndpoint {
     ),
     @APIResponse(
       responseCode = "500", 
-      description = "Pre-processing request failed to be sent to the Component Syncer"
+      description = "Internal server error"
     )
   })
   public Response submit(
