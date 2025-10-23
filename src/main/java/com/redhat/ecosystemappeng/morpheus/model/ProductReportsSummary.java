@@ -10,11 +10,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "ProductReportsSummary", description = "Product reports data")
 @RegisterForReflection
 public record ProductReportsSummary(
-    @Schema(description = "Product state of analysis")
+    @Schema(required = true, description = "Product state of analysis")
     String productState,
-    @Schema(description = "List of Component analysis states")
+    @Schema(required = true, description = "List of Component analysis states")
     List<String> componentStates,
-    @Schema(description = "Map of CVEs and their justifications")
+    @Schema(required = true, description = "Map of CVE vulnerabilities and their justifications")
     Map<String, Set<Justification>> cves) {
 
 }

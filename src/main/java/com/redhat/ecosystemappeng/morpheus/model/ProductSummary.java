@@ -7,8 +7,8 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 @Schema(name = "ProductSummary", description = "Product metadata and reports data")
 @RegisterForReflection
 public record ProductSummary(
-    @Schema(description = "Product data", type = SchemaType.OBJECT, implementation = Product.class)
+    @Schema(required = true, description = "Product data", type = SchemaType.OBJECT, implementation = Product.class)
     Product data,
-    @Schema(description = "Product reports summary data", type = SchemaType.OBJECT, implementation = ProductReportsSummary.class)
+    @Schema(required = true, description = "Product reports summary data", type = SchemaType.OBJECT, implementation = ProductReportsSummary.class)
     ProductReportsSummary summary
 ) {} 

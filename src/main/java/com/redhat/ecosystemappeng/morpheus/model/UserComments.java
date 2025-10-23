@@ -7,21 +7,29 @@ import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
+@Schema(name = "UserComments", description = "User provided comments on a vulnerability")
 @RegisterForReflection
 @Singleton
 public class UserComments {
+    @Schema(required = true, description = "CVE ID")
     @JsonProperty("cve_id")
     private String cveId = "CVE-XXXX-XXXX";
 
+    @Schema(description = "CVE Description")
     @JsonProperty("nvd_cve_description")
     private String cveDescription = "<This is a PLACEHOLDER for (CVE Description), replace or delete property>";
 
+    @Schema(description = "CVSS Vector string")
     @JsonProperty("nvd_cvss_vector")
     private String cvssVector = "<This is a PLACEHOLDER for (CVSS Vector), replace or delete property>";
 
+    @Schema(description = "CWE Name")
     @JsonProperty("nvd_cwe_name")
     private String cweName = "<This is a PLACEHOLDER for (CWE Name), replace or delete property>";
 
+    @Schema(description = "GHSA Details")
     @JsonProperty("ghsa_vulnerabilities")
     private List<Map<String, Object>> ghsaDetails = List.of(
             Map.of("-", "<This is a PLACEHOLDER for (GHSA Details), replace or delete property>"),
@@ -33,6 +41,7 @@ public class UserComments {
             )
     );
 
+    @Schema(description = "Known Affected Software")
     @JsonProperty("nvd_configurations")
     private List<Map<String, Object>> knownAffectedSoftware = List.of(
             Map.of("-", "<This is a PLACEHOLDER for (Known Affected Software), replace or delete property>"),
@@ -46,23 +55,29 @@ public class UserComments {
             )
     );
 
+    @Schema(description = "CWE Description")
     @JsonProperty("nvd_cwe_description")
     private String cweDescription = "<This is a PLACEHOLDER for (CWE Description), replace or delete property>";
 
+    @Schema(description = "CWE Extended Description")
     @JsonProperty("nvd_cwe_extended_description")
     private String cweExtendedDescription = "<This is a PLACEHOLDER for (), replace, remove or delete property>";
 
+    @Schema(description = "Notable Vulnerable Software Vendors")
     @JsonProperty("nvd_vendor_names")
     private List<String> notableVulnerableVendors = List.of("<This is a PLACEHOLDER for (Notable Vulnerable Software Vendors), replace, remove or delete property>");
 
+    @Schema(description = "RHSA Description")
     @JsonProperty("rhsa_bugzilla_description")
     private String rhsaDescription = "<This is a PLACEHOLDER for (RHSA Description), replace, remove or delete property>";
 
+    @Schema(description = "RHSA Details")
     @JsonProperty("rhsa_details")
     private List<String> rhsaDetails = List.of(
             "<This is a PLACEHOLDER for (RHSA Details), replace, remove or delete property>"
     );
 
+    @Schema(description = "RHSA Affected Packages")
     @JsonProperty("rhsa_package_state")
     private List<Map<String, String>> rhsaAffectedPackages = List.of(
             Map.of("info", "<This is a PLACEHOLDER for (RHSA Affected Packages), replace, remove or delete property>"),
@@ -74,12 +89,15 @@ public class UserComments {
             )
     );
 
+    @Schema(description = "RHSA Statement")
     @JsonProperty("rhsa_statement")
     private String rhsaStatement = "<This is a PLACEHOLDER for (RHSA Statement), replace, remove or delete property>";
 
+    @Schema(description = "Ubuntu Description")
     @JsonProperty("ubuntu_ubuntu_description")
     private String ubuntuDescription = "<This is a PLACEHOLDER for (Ubuntu Security Note), replace, remove or delete property>";
 
+    @Schema(description = "Identified Vulnerable Dependencies")
     @JsonProperty("vulnerable_dependencies")
     private String vulnerableDependencies = "<This is a PLACEHOLDER for (Identified Vulnerable Dependencies), replace, remove or delete property>";
 
