@@ -162,7 +162,8 @@ public class ReportEndpoint {
       description = "Retry request accepted",
       content = @Content(
         schema = @Schema(
-          type = SchemaType.STRING
+          type = SchemaType.STRING,
+          example = "66155fd9639dbb7e7e4e44b8"
         )
       )
     ),
@@ -171,7 +172,8 @@ public class ReportEndpoint {
       description = "Request not found",
       content = @Content(
         schema = @Schema(
-          type = SchemaType.STRING
+          type = SchemaType.STRING,
+          example = "66155fd9639dbb7e7e4e44b8"
         )
       )
     ),
@@ -396,7 +398,8 @@ public class ReportEndpoint {
       description = "Request submitted successfully",
       content = @Content(
         schema = @Schema(
-          type = SchemaType.STRING
+          type = SchemaType.STRING,
+          example = "66155fd9639dbb7e7e4e44b8"
         )
       )
     ),
@@ -406,12 +409,7 @@ public class ReportEndpoint {
     ),
     @APIResponse(
       responseCode = "404", 
-      description = "Request payload not found",
-      content = @Content(
-        schema = @Schema(
-          type = SchemaType.STRING
-        )
-      )
+      description = "Request payload not found"
     ),
     @APIResponse(
       responseCode = "429", 
@@ -480,7 +478,8 @@ public class ReportEndpoint {
       description = "Failure status record accepted",
       content = @Content(
         schema = @Schema(
-          type = SchemaType.STRING
+          type = SchemaType.STRING,
+          example = "66155fd9639dbb7e7e4e44b8"
         )
       )
     ),
