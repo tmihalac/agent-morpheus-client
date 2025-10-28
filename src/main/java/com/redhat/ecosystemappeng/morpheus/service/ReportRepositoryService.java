@@ -238,6 +238,9 @@ public class ReportRepositoryService {
 
   public String findById(String id) {
     var result = getCollection().find(Filters.eq(RepositoryConstants.ID_KEY, new ObjectId(id))).first();
+    if (result == null) {
+      return null;
+    }
     return result.toJson();
   }
 
