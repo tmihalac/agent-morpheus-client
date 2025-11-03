@@ -15,6 +15,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import io.opentelemetry.context.Context;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -66,6 +67,7 @@ public class ReportService {
   private static final String SOURCE_LOCATION_PROPERTY_GENERAL = "image.source-location";
   private static final String PACKAGE_TYPE_PROPERTY = "syft:package:type";
   private static final Pattern PURL_PKG_TYPE = Pattern.compile("pkg\\:(\\w+)\\/.*");
+  public static final String HOSTED_GITHUB_COM = "github.com";
 
 
   @RestClient
@@ -333,7 +335,13 @@ public class ReportService {
       sourceLocation = request.sourceRepo();
       commitId = request.commitId();
     }
-    var languages = getGitHubLanguages(sourceLocation);
+    Set<String> languages;
+    if (sourceLocation.contains(HOSTED_GITHUB_COM)) {
+      languages = getGitHubLanguages(sourceLocation);
+    }
+    else {
+      languages = buildLanguagesExtensions(request.ecosystem());
+    }
 
     var allIncludes = languages.stream().map(includes::get).filter(Objects::nonNull).flatMap(Collection::stream)
         .toList();
@@ -345,6 +353,16 @@ public class ReportService {
 
     return new Image(request.analysisType(), ecosystem, manifestPath, name, tag, srcInfo, sbomInfo);
   }
+
+  private Set<String> buildLanguagesExtensions(String ecosystem) {
+    if(Objects.nonNull(ecosystem) && !ecosystem.trim().isEmpty()) {
+      String programmingLanguage = includes.keySet().stream().filter(eco -> eco.trim().equalsIgnoreCase(ecosystem)).findFirst().get();
+      return Set.of(programmingLanguage);
+    }
+    else {
+      return includes.keySet().stream().collect(Collectors.toSet());
+      }
+    }
 
   private static String getSourceLocationFromMetadataLabels(HashMap<String, String> properties) {
     String sourceLocationValue =  properties.get(SOURCE_LOCATION_PROPERTY_GENERAL);
