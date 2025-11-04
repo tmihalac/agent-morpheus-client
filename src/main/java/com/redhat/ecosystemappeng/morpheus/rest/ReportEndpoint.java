@@ -237,7 +237,7 @@ public class ReportEndpoint {
         }
         """
     )
-    @QueryParam("report") String report) {
+    String report) {
     var reqId = reportService.receive(report);
     LOGGER.debugf("Received report { id: %s | report_id: %s }", reqId.id(), reqId.reportId());
     return Response.accepted(reqId).build();
