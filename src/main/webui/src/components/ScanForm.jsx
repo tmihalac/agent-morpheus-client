@@ -132,7 +132,11 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
 
     const metadata = updated['metadata'] || [];
     for (let pair of metadata) {
-      if (!pair.name || pair.name.trim() === '' || !pair.value || pair.value.trim() === '') {
+      if ((pair.name && pair.name.trim() !== '') && (!pair.value || pair.value.trim() === '')) {
+        setCanSubmit(false);
+        return;
+      }
+      else if((!pair.name || pair.name.trim() === '') && (pair.value && pair.value.trim() !== '')){
         setCanSubmit(false);
         return;
       }
@@ -147,7 +151,13 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
     setCanSubmit(true);
   }
 
-  return <Form isHorizontal>
+  function handleLoadingPopulatedForm() {
+    let existingFormFromState = { cves: cves , metadata: metadata, sbom: sbom.trim(), filename: filename.trim()
+      }
+    onFormUpdated(existingFormFromState)
+  }
+
+  return <Form onFocus={handleLoadingPopulatedForm} onBlur={handleLoadingPopulatedForm} isHorizontal>
     <FormSection title="Metadata">
       {metadata.map((m, idx) => {
         return <div key={`metadata_${idx}_pair`}>
