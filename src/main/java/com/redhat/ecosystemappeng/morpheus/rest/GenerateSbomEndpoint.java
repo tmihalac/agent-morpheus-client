@@ -4,7 +4,7 @@ import java.util.Objects;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -26,7 +26,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.QueryParam;
 
 @SecurityRequirement(name = "jwt")
 @Path("/generate-sbom")
@@ -84,12 +83,19 @@ public class GenerateSbomEndpoint {
         )
     })
     public Response generateSbom(
-        @Parameter(
+        @RequestBody(
             description = "Container image name and tag", 
             required = true,
-            example = "nginx:latest"
+            content = @Content(
+                mediaType = MediaType.TEXT_PLAIN,
+                schema = @Schema(type = SchemaType.STRING),
+                examples = @ExampleObject(
+                    name = "nginx:latest",
+                    value = "nginx:latest"
+                )
+            )
         )
-        @QueryParam("image") String image) {
+        String image) {
         if (Objects.isNull(image) || image.isEmpty()) {
             return Response.status(Status.BAD_REQUEST)
                 .entity(objectMapper.createObjectNode()

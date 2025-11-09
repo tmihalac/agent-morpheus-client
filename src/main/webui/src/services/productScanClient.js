@@ -117,7 +117,7 @@ const lookupCachedComponent = async ref => {
 
 	if (!reportListResponse.ok) {
 		const error = await reportListResponse.text();
-		concole.error(`Could not retrieve report List for ${ref} from cached reports. status: ${reportListResponse.status}, error: ${error}`);
+		console.error(`Could not retrieve report List for ${ref} from cached reports. status: ${reportListResponse.status}, error: ${error}`);
 		return
 	}
 
@@ -133,7 +133,7 @@ const lookupCachedComponent = async ref => {
 
 	if (!reportResponse.ok) {
 		const error = await reportResponse.text();
-		concole.error(`Could not retrieve report for ${ref} from cached reports. status: ${reportResponse.status}, error: ${error}`);
+		console.error(`Could not retrieve report for ${ref} from cached reports. status: ${reportResponse.status}, error: ${error}`);
 		return
 	}
 
