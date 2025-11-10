@@ -115,7 +115,11 @@ export const SourceScanForm = ({ sourceRequest, handleSourceRequestChange, onNew
 
     const metadata = updated['metadata'] || [];
     for (let pair of metadata) {
-      if (!pair.name || pair.name.trim() === '' || !pair.value || pair.value.trim() === '') {
+      if ((pair.name && pair.name.trim() !== '') && (!pair.value || pair.value.trim() === '')) {
+        setCanSubmit(false);
+        return;
+        }
+      else if((!pair.name || pair.name.trim() === '') && (pair.value && pair.value.trim() !== '')){
         setCanSubmit(false);
         return;
       }
@@ -136,7 +140,13 @@ export const SourceScanForm = ({ sourceRequest, handleSourceRequestChange, onNew
     setCanSubmit(true);
   }
 
-  return <Form isHorizontal>
+  function handleLoadingForm() {
+        let existingFormFromState = { cves: cves , metadata: metadata, sourceRepo: sourceRepo,
+        commitId: commitId}
+        onFormUpdated(existingFormFromState)
+  }
+
+  return <Form onFocus={handleLoadingForm} onBlur={handleLoadingForm} isHorizontal>
     <FormSection title="Metadata">
       {metadata.map((m, idx) => {
         return <div key={`metadata_${idx}_pair`}>
