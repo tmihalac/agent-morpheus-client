@@ -1,13 +1,39 @@
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { deleteReport, viewReport } from "./services/ReportClient";
-import { getComments } from "./services/VulnerabilityClient";
-import { Breadcrumb, BreadcrumbItem, Button, Divider, EmptyState, EmptyStateBody, Flex, Grid, GridItem, PageSection, Panel, Skeleton, Content, ContentVariants, getUniqueId, List, ListComponent, ListItem, DescriptionListGroup, DescriptionListTerm, DescriptionListDescription, DescriptionList, Label, Title } from "@patternfly/react-core";
+import {Link, useNavigate, useParams} from "react-router-dom";
+import {deleteReport, viewReport} from "./services/ReportClient";
+import {getComments} from "./services/VulnerabilityClient";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  Button,
+  Divider,
+  EmptyState,
+  EmptyStateBody,
+  Flex,
+  Grid,
+  GridItem,
+  PageSection,
+  Panel,
+  Skeleton,
+  Content,
+  ContentVariants,
+  getUniqueId,
+  List,
+  ListComponent,
+  ListItem,
+  DescriptionListGroup,
+  DescriptionListTerm,
+  DescriptionListDescription,
+  DescriptionList,
+  Label,
+  Title
+} from "@patternfly/react-core";
 import CubesIcon from '@patternfly/react-icons/dist/esm/icons/cubes-icon';
 import ExclamationCircleIcon from '@patternfly/react-icons/dist/esm/icons/exclamation-circle-icon';
 import JustificationBanner from "./components/JustificationBanner";
 import CvssBanner from "./components/CvssBanner";
-import { ConfirmationButton } from "./components/ConfirmationButton";
-import { getMetadataColor } from "./Constants";
+import {ConfirmationButton} from "./components/ConfirmationButton";
+import {getMetadataColor} from "./Constants";
+import FeedbackForm from "./components/FeedbackForm.jsx";
 
 export default function Report() {
 
@@ -32,7 +58,7 @@ export default function Report() {
 
   const onDownload = () => {
     const element = document.createElement("a");
-    const file = new Blob([JSON.stringify(report)], { type: 'application/json' });
+    const file = new Blob([JSON.stringify(report)], {type: 'application/json'});
     element.href = URL.createObjectURL(file);
     element.download = `${name}.json`;
     document.body.appendChild(element);
@@ -41,7 +67,19 @@ export default function Report() {
 
   const time_meta_fields = [
     "submitted_at",
-    "sent_at"
+    "sent_at",
+    "product_submitted_at",
+    "product_completed_at",
+    "product_name",
+    "product_version",
+    "product_submitted_count"
+  ];
+
+  const product_meta_fields = [
+    "product_submitted_at",
+    "product_name",
+    "product_version",
+    "product_submitted_count"
   ];
 
   const time_scan_fields = [
@@ -71,19 +109,59 @@ export default function Report() {
     });
   }
 
+  const getReportSummary = (report) => {
+    if (!report.input) return "Empty report";
+
+    const lines = [];
+    lines.push(`Name: ${name}`);
+    lines.push('');
+    lines.push(`Image: ${report.input.image.name}`);
+    lines.push('');
+
+    if (report.output) {
+      report.output.forEach(vuln => {
+        lines.push(`Vulnerability: ${vuln.vuln_id}`);
+        lines.push("");
+        if (vuln.justification?.label) {
+          lines.push(`Label: ${vuln.justification.label}`);
+          lines.push("");
+        }
+        if (vuln.justification?.reason) {
+          lines.push(`Reason: ${vuln.justification.reason}`);
+        }
+        lines.push('');
+        lines.push(`Summary: ${vuln.summary}`);
+        lines.push('');
+        lines.push('Checklist:');
+        if (vuln.checklist) {
+          vuln.checklist.forEach(item => {
+            lines.push(`Q: ${item.input}`);
+            lines.push(`A: ${item.response}`);
+          });
+        }
+        lines.push('---');
+      });
+    }
+
+    return lines.join('\n');
+  };
+
   const showReport = () => {
     if (errorReport.status !== undefined) {
       if (errorReport.status === 404) {
         return <EmptyState headingLevel="h4" icon={CubesIcon} titleText="Report not found">
           <EmptyStateBody>
-            The selected report with id: {params.id} has not been found. Go back to the reports page and select a different one.
+            The selected report with id: {params.id} has not been found. Go back to the reports page and select a
+            different one.
           </EmptyStateBody>
         </EmptyState>;
       } else {
-        return <EmptyState headingLevel="h4" icon={ExclamationCircleIcon} titleText="Could not retrieve the selected report">
+        return <EmptyState headingLevel="h4" icon={ExclamationCircleIcon}
+                           titleText="Could not retrieve the selected report">
           <EmptyStateBody>
             <p>{errorReport.status}: {errorReport.message}</p>
-            The selected report with id: {params.id} could not be retrieved. Go back to the reports page and select a different one.
+            The selected report with id: {params.id} could not be retrieved. Go back to the reports page and select a
+            different one.
           </EmptyStateBody>
         </EmptyState>;
       }
@@ -91,21 +169,21 @@ export default function Report() {
 
     if (report.input === undefined) {
       return <>
-        <Skeleton screenreaderText="Loading contents" />
-        <br />
-        <Skeleton width="40%" screenreaderText="Loading contents" />
-        <Skeleton width="35%" screenreaderText="Loading contents" />
-        <br />
-        <Skeleton screenreaderText="Loading contents" />
-        <br />
-        <Skeleton screenreaderText="Loading contents" />
-        <br />
-        <Divider />
-        <br />
-        <Skeleton width="10%" screenreaderText="Loading contents" />
-        <br />
-        <Skeleton screenreaderText="Loading contents" />
-        <Skeleton screenreaderText="Loading contents" />
+        <Skeleton screenreaderText="Loading contents"/>
+        <br/>
+        <Skeleton width="40%" screenreaderText="Loading contents"/>
+        <Skeleton width="35%" screenreaderText="Loading contents"/>
+        <br/>
+        <Skeleton screenreaderText="Loading contents"/>
+        <br/>
+        <Skeleton screenreaderText="Loading contents"/>
+        <br/>
+        <Divider/>
+        <br/>
+        <Skeleton width="10%" screenreaderText="Loading contents"/>
+        <br/>
+        <Skeleton screenreaderText="Loading contents"/>
+        <Skeleton screenreaderText="Loading contents"/>
       </>;
     }
 
@@ -115,16 +193,19 @@ export default function Report() {
     let timestamps = [];
     if (report.metadata !== undefined) {
       Object.keys(report.metadata).forEach(k => {
-        if (time_meta_fields.includes(k)) {
+        if (product_meta_fields.includes(k)) {
+          // ignore keys in product_meta_fields
+        }
+        else if (time_meta_fields.includes(k)) {
           timestamps.push({ key: k, value: report.metadata[k]["$date"] });
         } else {
-          metadata.push({ key: k, value: report.metadata[k] });
+          metadata.push({key: k, value: report.metadata[k]});
         }
       });
     }
     time_scan_fields.forEach(field => {
-      if(report.input.scan[field] !== undefined) {
-        timestamps.push({ key: field, value: report.input.scan[field] });
+      if (report.input.scan[field] !== undefined) {
+        timestamps.push({key: field, value: report.input.scan[field]});
       }
     });
 
@@ -133,11 +214,13 @@ export default function Report() {
       <DescriptionList isHorizontal isCompact>
         <DescriptionListGroup>
           <DescriptionListTerm>Image</DescriptionListTerm>
-          <DescriptionListDescription><Link to={`/reports?imageName=${image.name}`}>{image.name}</Link></DescriptionListDescription>
+          <DescriptionListDescription><Link
+            to={`/reports?imageName=${image.name}`}>{image.name}</Link></DescriptionListDescription>
         </DescriptionListGroup>
         <DescriptionListGroup>
           <DescriptionListTerm>Tag</DescriptionListTerm>
-          <DescriptionListDescription><Link to={`/reports?imageTag=${image.tag}`}>{image.tag}</Link></DescriptionListDescription>
+          <DescriptionListDescription><Link
+            to={`/reports?imageTag=${image.tag}`}>{image.tag}</Link></DescriptionListDescription>
         </DescriptionListGroup>
         {
           timestamps.map(k => {
@@ -149,7 +232,9 @@ export default function Report() {
         }
         <DescriptionListGroup>
           <DescriptionListTerm>Metadata</DescriptionListTerm>
-          <DescriptionListDescription>{metadata?.map(k => <Label onClick={() => navigate(`/reports?${k.key}=${k.value}`)} color={getMetadataColor(k.key)}>{k.key}:{k.value}</Label>)}</DescriptionListDescription>
+          <DescriptionListDescription>{metadata?.map(k => <Label
+            onClick={() => navigate(`/reports?${k.key}=${k.value}`)}
+            color={getMetadataColor(k.key)}>{k.key}:{k.value}</Label>)}</DescriptionListDescription>
         </DescriptionListGroup>
       </DescriptionList>
 
@@ -164,10 +249,10 @@ export default function Report() {
         }
         return (<>
             <Title headingLevel="h2" size="lg">
-              <Link to={`/reports?vulnId=${vuln.vuln_id}`} style={{ color: "black"}}>
+              <Link to={`/reports?vulnId=${vuln.vuln_id}`} style={{color: "black"}}>
                 {vuln.vuln_id}
               </Link>
-              <JustificationBanner justification={vuln.justification} />
+              <JustificationBanner justification={vuln.justification}/>
             </Title>
             <DescriptionList isHorizontal isCompact>
               {userComments}
@@ -183,7 +268,7 @@ export default function Report() {
                 <DescriptionListTerm>CVSS Vector String</DescriptionListTerm>
                 <DescriptionListDescription>{vuln.cvss?.vector_string ?? ''}</DescriptionListDescription>
                 <DescriptionListTerm>CVSS Score</DescriptionListTerm>
-                <DescriptionListDescription><CvssBanner cvss={vuln.cvss ?? null} /></DescriptionListDescription>
+                <DescriptionListDescription><CvssBanner cvss={vuln.cvss ?? null}/></DescriptionListDescription>
               </DescriptionListGroup>
               {vuln.intel_score !== undefined && vuln.intel_score > 0 && (
                   <>
@@ -218,14 +303,19 @@ export default function Report() {
         <Flex columnGap={{ default: 'columnGapSm' }}>
           <Button variant="secondary" onClick={onDownload}>Download</Button>
           <ConfirmationButton btnVariant="danger"
-            onConfirm={() => onDelete()}
-            message={`The report with id: ${name} will be permanently deleted.`}>Delete</ConfirmationButton>
+                              onConfirm={() => onDelete()}
+                              message={`The report with id: ${name} will be permanently deleted.`}>Delete</ConfirmationButton>
           <Button variant="primary" onClick={() => navigate(-1)}>Back</Button>
         </Flex>
       </GridItem>
+
+      <GridItem span={3}>
+        <Title headingLevel="h2" size="lg" className="pf-v6-u-mb-md">Feedback</Title>
+        <FeedbackForm aiResponse={getReportSummary(report)} reportId={name}/>
+      </GridItem>
     </Grid>
   }
-  return <PageSection hasBodyWrapper={false} >
+  return <PageSection hasBodyWrapper={false}>
     <Breadcrumb>
       <BreadcrumbItem to="#/reports">Reports</BreadcrumbItem>
       <BreadcrumbItem>{params.id}</BreadcrumbItem>

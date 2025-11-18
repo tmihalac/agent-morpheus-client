@@ -11,8 +11,11 @@ import jakarta.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.Date;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import com.redhat.ecosystemappeng.morpheus.service.UserService;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 
+@SecurityRequirement(name = "jwt")
 @Path("/user")
 public class TokenResource {
 
@@ -21,12 +24,14 @@ public class TokenResource {
 
   @GET
   @Produces("application/json")
+  @Operation(hidden=true)
   public String getUserName() {
     return String.format("{\"name\": \"%s\"}", userService.getUserName());
   }
 
   @POST
   @Path("/logout")
+  @Operation(hidden=true)
   public Response logout() {
     final NewCookie removeCookie = new NewCookie.Builder("q_session")
         .maxAge(0)

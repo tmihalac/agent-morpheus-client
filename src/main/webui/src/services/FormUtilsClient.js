@@ -1,16 +1,34 @@
-const CYCLONEDX_SBOM = 'cyclonedx+json';
-const MANUAL_SBOM = 'manual';
+const JAVA = 'java';
+const PYTHON = 'python';
+const GO = 'go';
+const JAVASCRIPT = 'javascript';
+const C = 'c';
 
-export const sbomTypes = [
+export const SupportedEcosystems = [
   {
-    value: MANUAL_SBOM,
-    label: 'Manual (CSV)',
+    value: JAVA,
+    label: 'Java',
     disabled: false
   },
   {
-    value: CYCLONEDX_SBOM,
-    label: 'CycloneDX (JSON)',
-    disabled: true
+    value: PYTHON,
+    label: 'Python',
+    disabled: false
+  },
+  {
+    value: GO,
+    label: 'Go',
+    disabled: false
+  },
+  {
+    value: JAVASCRIPT,
+    label: 'Javascript',
+    disabled: false
+  },
+  {
+    value: C,
+    label: 'C',
+    disabled: false
   }
 ];
 
@@ -21,18 +39,24 @@ const buildMetadata = (metadata) => {
   return Object.fromEntries(metadata.map((e) => [e.name, e.value]));
 };
 
-export const buildRequestJson = (data) => {
+const buildRequestJson = (data) => {
   return {
     id: data.id,
+    analysisType: data.analysisType,
     vulnerabilities: data.cves.map(e => e.name),
     metadata: buildMetadata(data.metadata),
     sbom_info_type: data.sbomType,
-    sbom: data.sbom
+    image: data.image,
+    sbom: data.sbom,
+    sourceRepo: data.sourceRepo,
+    commitId: data.commitId,
+    ecosystem: data.ecosystem,
+    manifestPath: data.manifestPath
   };
 }
 
-export const sendToMorpheus = async (data) => {
-  return await fetch('/reports/new', {
+export const newMorpheusRequest = async (data, sendToMorpheus = true) => {
+  return await fetch(`/reports/new?submit=${sendToMorpheus}`, {
     method: "POST",
     headers: {
       'Accept': 'application/json',

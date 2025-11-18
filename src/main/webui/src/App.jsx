@@ -7,7 +7,9 @@ import { getUserName, logoutUser } from './services/UserClient';
 
 export default function App() {
 
-  const [vulnRequest, setVulnRequest] = React.useState({ sbomType: 'manual' });
+  const [vulnRequest, setVulnRequest] = React.useState({ analysisType: 'image', sbomType: 'manual' });
+  const [productVulnRequest, setProductVulnRequest] = React.useState({ analysisType: 'image', sbomType: 'manual' });
+  const [sourceRequest, setSourceRequest] = React.useState({ analysisType: 'source' });
   const [alerts, setAlerts] = React.useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const [userName, setUserName] = React.useState('');
@@ -64,6 +66,20 @@ export default function App() {
     return updated;
   };
 
+  const handleProductVulnRequestChange = (changes) => {
+    let updated = { ...productVulnRequest }
+    Object.assign(updated, changes)
+    setProductVulnRequest(updated);
+    return updated;
+  };
+
+  const handleSourceRequestChange = (changes) => {
+    let updated = { ...sourceRequest }
+    Object.assign(updated, changes)
+    setSourceRequest(updated);
+    return updated;
+  };
+
   const handleLogout = () => {
     logoutUser().then(() => window.location.replace("/app/index.html"));
   }
@@ -78,13 +94,19 @@ export default function App() {
   const PageNav = <Nav aria-label="Nav">
     <NavList>
       <NavItem itemId={0} isActive={location.pathname === '/'} to="#">
-        Request Analysis
+        Request Component Analysis
       </NavItem>
       <NavItem itemId={1} isActive={location.pathname.startsWith('/reports')} to="#/reports">
         View Reports
       </NavItem>
       <NavItem itemId={2} isActive={location.pathname.startsWith('/vulnerabilities')} to="#/vulnerabilities">
         Vulnerabilities
+      </NavItem>
+      <NavItem itemId={3} isActive={location.pathname === '/product'} to="#/product">
+        Request Product Analysis
+      </NavItem>
+      <NavItem itemId={4} isActive={location.pathname.startsWith('/product-reports')} to="#/product-reports">
+        Product Reports
       </NavItem>
     </NavList>
   </Nav>;
@@ -137,7 +159,7 @@ export default function App() {
       </PageToggleButton>
     </MastheadToggle>
       <MastheadBrand>
-        <Title headingLevel='h2'>Agent Morpheus - GUI</Title>
+        <Title headingLevel='h2'>ExploitIQ - GUI</Title>
       </MastheadBrand>
     </MastheadMain>
     <MastheadContent>{headerToolbar}</MastheadContent>
@@ -146,7 +168,7 @@ export default function App() {
   const PageSkipToContent = <SkipToContent href={`#${pageId}`}>Skip to content</SkipToContent>;
   return <React.Fragment>
     <Page masthead={Header} skipToContent={PageSkipToContent} mainContainerId={pageId} sidebar={sidebar}>
-      <Outlet context={{ vulnRequest, handleVulnRequestChange, addAlert }} />
+      <Outlet context={{ vulnRequest, handleVulnRequestChange, productVulnRequest, handleProductVulnRequestChange, sourceRequest, handleSourceRequestChange, addAlert }} />
       <ToastNotifications alerts={alerts} onDeleteAlert={onDeleteAlert} />
     </Page>
   </React.Fragment>;

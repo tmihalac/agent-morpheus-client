@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.Objects;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
@@ -107,7 +108,7 @@ public class RequestQueueService {
   private void submitOneReportFromQueue() {
 
     var nextId = pending.poll();
-    if (nextId == null) {
+    if (Objects.isNull(nextId)) {
       return;
     }
     Span span = tracer.spanBuilder("internal queue processing submit one former pending")
@@ -116,7 +117,7 @@ public class RequestQueueService {
     var report = repository.findById(nextId);
 
     LOGGER.debugf("Polled %s from the pending queue", nextId);
-    if (report != null) {
+    if (Objects.nonNull(report)) {
       try {
 
         JsonNode jsonReport = objectMapper.readTree(report);
@@ -147,7 +148,7 @@ public class RequestQueueService {
 
   private void submit(String id, JsonNode report) {
     try {
-      morpheusService.submit(report.get("input").toPrettyString());
+      morpheusService.submitAsync(report.get("input").toPrettyString());
       repository.setAsSent(id);
       active.put(id, LocalDateTime.now());
       LOGGER.debugf("Report %s sent to Morpheus", id);

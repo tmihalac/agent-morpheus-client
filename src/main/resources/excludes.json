@@ -1,9 +1,9 @@
 {
   "Go": [
     "test/**/*",
-    "**/vendor/**/*",
     "go.mod",
-    "go.sum"
+    "go.sum",
+    "**/*test*.go"
   ],
   "Java": [
     "target/**/*",

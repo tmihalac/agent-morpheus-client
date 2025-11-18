@@ -89,6 +89,7 @@ spec:
             value: >-
               --label=quay.expires-after=$(params.image-expires-after)
               --ulimit nofile=550000:550000
+              --env=QUARKUS_SWAGGER_UI_ALWAYS_INCLUDE=true
         taskRef:
           resolver: cluster
           params:

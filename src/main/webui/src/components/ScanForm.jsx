@@ -2,23 +2,18 @@ import { ActionGroup, Button, FileUpload, Flex, FlexItem, Form, FormGroup, FormS
 import Remove2Icon from '@patternfly/react-icons/dist/esm/icons/remove2-icon';
 import AddCircleOIcon from '@patternfly/react-icons/dist/esm/icons/add-circle-o-icon';
 
-import { sendToMorpheus, sbomTypes } from "../services/FormUtilsClient";
+import { newMorpheusRequest, SupportedEcosystems } from "../services/FormUtilsClient";
 
 export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) => {
-  const [id, setId] = React.useState(vulnRequest['id'] || '');
   const [cves, setCves] = React.useState(vulnRequest['cves'] || [{}]);
   const [sbom, setSbom] = React.useState(vulnRequest['sbom'] || {});
-  const [metadata, setMetadata] = React.useState(vulnRequest['metadata'] || []);
-  const [sbomType, setSbomType] = React.useState(vulnRequest['sbomType'] || 'manual');
+  const [metadata, setMetadata] = React.useState(vulnRequest['metadata'] || [{}]);
   const [filename, setFilename] = React.useState(vulnRequest['filename'] || '');
   const [isLoading, setIsLoading] = React.useState(false);
   const [canSubmit, setCanSubmit] = React.useState(false);
-
-  const handleIdChange = (_, id) => {
-    setId(id);
-    onFormUpdated({ id: id })
-  };
-
+  const [ecosystem, setEcosystem] = React.useState(vulnRequest['ecosystem'] || '');
+  const [manifestPath, setManifestPath] = React.useState(vulnRequest['manifestPath'] || '');
+  
   const handleMetadataChange = (idx, field, newValue) => {
     const updatedMetadata = [...metadata];
     updatedMetadata[idx][field] = newValue;
@@ -70,6 +65,16 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
     });
   }
 
+  const handleEcosystemChange = (_, ecosystem) => {
+    setEcosystem(ecosystem);
+    handleVulnRequestChange({ ecosystem: ecosystem });
+  }
+
+  const handleManifestPathChange = (value) => {
+    setManifestPath(value);
+    handleVulnRequestChange({ manifestPath: value });
+  }
+
   const handleFileInputChange = (_, file) => {
     const fileReader = new FileReader();
     fileReader.readAsText(file, "UTF-8");
@@ -82,10 +87,6 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
     }
     setFilename(file.name);
   }
-  const handleSbomTypeChange = (_, type) => {
-    setSbomType(type);
-    onFormUpdated({ sbomType: type });
-  }
   const handleFileReadStarted = (_event, _fileHandle) => {
     setIsLoading(true);
   };
@@ -96,12 +97,12 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
   const handleClear = _ => {
     setFilename('');
     setSbom('');
-    onFormUpdated();
+    onFormUpdated({ sbom: '' });
   }
 
   const onSubmitForm = () => {
     setCanSubmit(false);
-    sendToMorpheus(vulnRequest)
+    newMorpheusRequest(vulnRequest)
       .then(response => {
         if (response.ok) {
           onNewAlert('success', 'Analysis request sent to Morpheus');
@@ -114,46 +115,49 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
   }
 
   const onFormUpdated = (update) => {
-    if(update === undefined) {
-      setCanSubmit(false);
-    }
+
     const updated = handleVulnRequestChange(update);
     
     const updatedCves = updated['cves'];    
     if (updatedCves === undefined || updatedCves.length === 0) {
       setCanSubmit(false);
-      handleVulnRequestChange(update);
       return;
     }
     for (let value of updatedCves) {
       if (value.name === undefined || value.name.trim() === '') {
         setCanSubmit(false);
-        handleVulnRequestChange(update);
         return;
       }
     }
 
-    const metadata = updated['metadata'];
-    for (let idx in metadata) {
-      const pair = metadata[idx];
-      if (pair.name === undefined || pair.name.trim() === '' || pair.value === undefined || pair.value.trim() === '') {
+    const metadata = updated['metadata'] || [];
+    for (let pair of metadata) {
+      if ((pair.name && pair.name.trim() !== '') && (!pair.value || pair.value.trim() === '')) {
         setCanSubmit(false);
-        handleVulnRequestChange(update);
+        return;
+      }
+      else if((!pair.name || pair.name.trim() === '') && (pair.value && pair.value.trim() !== '')){
+        setCanSubmit(false);
         return;
       }
     }
 
-    if (updated.sbom === undefined || updated.sbom === '') {
+    const updatedSbom = updated['sbom'];
+    if (updatedSbom === undefined || updatedSbom === '') {
       setCanSubmit(false);
-    } else {
-      setCanSubmit(true);
+      return;
     }
+
+    setCanSubmit(true);
   }
 
-  return <Form isHorizontal>
-    <FormGroup label="Request ID" fieldId="req-id">
-      <TextInput type="text" id="req-id" value={id} onChange={handleIdChange} placeholder="Leave blank and will be generated" autoComplete="off"></TextInput>
-    </FormGroup>
+  function handleLoadingPopulatedForm() {
+    let existingFormFromState = { cves: cves , metadata: metadata, sbom: sbom.trim(), filename: filename.trim()
+      }
+    onFormUpdated(existingFormFromState)
+  }
+
+  return <Form onFocus={handleLoadingPopulatedForm} onBlur={handleLoadingPopulatedForm} isHorizontal>
     <FormSection title="Metadata">
       {metadata.map((m, idx) => {
         return <div key={`metadata_${idx}_pair`}>
@@ -207,10 +211,14 @@ export const ScanForm = ({ vulnRequest, handleVulnRequestChange, onNewAlert }) =
         </FlexItem>
       </Flex>
     </FormSection>
-    <FormGroup label="SBOM Input Type" isRequired fieldId="sbom-type">
-      <FormSelect value={sbomType} id="sbom-type" onChange={handleSbomTypeChange}>
-        {sbomTypes.map((option, index) => <FormSelectOption isDisabled={option.disabled} key={index} value={option.value} label={option.label} />)}
+    <FormGroup label="Ecosystem" fieldId="ecosystem">
+      <FormSelect value={ecosystem} id="ecosystem" onChange={handleEcosystemChange}>
+        <FormSelectOption key="empty" value="" label="Select a Programming Language (optional)" />
+        {SupportedEcosystems.map((option, index) => <FormSelectOption isDisabled={option.disabled} key={index} value={option.value} label={option.label} />)}
       </FormSelect>
+    </FormGroup>
+    <FormGroup label="Manifest Path" fieldId="manifest-path">
+      <TextInput type="text" id="manifest-path" value={manifestPath} onChange={event => handleManifestPathChange(event.target.value)} placeholder="Path to manifest in repository, e.g. path/to/manifest.yaml (optional)"></TextInput>
     </FormGroup>
     <FormGroup label="SBOM" isRequired fieldId="sbom-file">
       <FileUpload id="sbom-file" value={sbom}
