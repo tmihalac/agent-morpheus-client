@@ -74,7 +74,7 @@ const FeedbackForm = ({ aiResponse, reportId }) => {
   React.useEffect(() => {
     (async () => {
       try {
-        const { data } = await axios.get(`/feedback/${reportId}/exists`);
+        const { data } = await axios.get(`/api/v1/feedback/${reportId}/exists`);
         if (data.exists) {
           setPreviousSubmission(true);
           setSubmitted(true);
@@ -89,7 +89,7 @@ const FeedbackForm = ({ aiResponse, reportId }) => {
 
   const handleSubmit = async () => {
     try {
-      await axios.post("/feedback", {
+      await axios.post("/api/v1/feedback", {
         reportId,
         response: aiResponse,
         rating,

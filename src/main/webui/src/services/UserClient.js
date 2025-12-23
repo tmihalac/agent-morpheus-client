@@ -1,7 +1,7 @@
 import { ClientRequestError } from "./ClientUtils";
 
 export const getUserName = async () => {
-  const response = await fetch('/user', {
+  const response = await fetch('/api/v1/user', {
     headers: {
       'Accept': 'application/json'
     }
@@ -19,7 +19,7 @@ export const logoutUser = async () => {
   const removeCookie = `q_session=; Max-Age=0;path=/`;
   document.cookie = removeCookie;
   
-  const response = await fetch('/user/logout', { method: 'POST' });
+  const response = await fetch('/api/v1/user/logout', { method: 'POST' });
   if (!response.ok) {
     throw new ClientRequestError(response.status, response.statusText);
   }

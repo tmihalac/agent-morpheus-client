@@ -25,8 +25,8 @@ grantMethod: prompt
 secret: some-long-secret-used-by-the-oauth-client
 redirectURIs:
   - "http://agent-morpheus-client:8080"
-  - "https://agent-morpheus-client.example.openshift.com/app/index.html"
-  - "http://agent-morpheus-client.example.openshift.com/app/index.html"
+  - "https://agent-morpheus-client.example.openshift.com"
+  - "http://agent-morpheus-client.example.openshift.com"
 ```
 
 ## External services (GitHub / Morpheus)

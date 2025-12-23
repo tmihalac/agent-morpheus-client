@@ -8,7 +8,7 @@ To see all the configuration options check the [configuration](./configuration.m
 
 You can run your application in dev mode that enables live coding using:
 
-```shell script
+```shell
 quarkus dev -Dquarkus.rest-client.morpheus.url=https://agent-morpheus-route.com/scan  -Dquarkus.http.auth.permission.authenticated.policy=permit
 ```
 
@@ -16,8 +16,8 @@ quarkus dev -Dquarkus.rest-client.morpheus.url=https://agent-morpheus-route.com/
 
 You can supply the application with data by sending Agent Morpheus output.json files from your local file system to the application using:
 
-```shell script
- curl -i -X POST --header 'Content-type: application/json'    http://localhost:8080/reports -d @/path/to/file.json
+```shell
+ curl -i -X POST --header 'Content-type: application/json' http://localhost:8080/api/v1/reports -d @/path/to/file.json
 ```
 
 > **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
@@ -26,7 +26,7 @@ You can supply the application with data by sending Agent Morpheus output.json f
 
 The application can be packaged using:
 
-```shell script
+```shell
 ./mvnw package
 ```
 
@@ -37,7 +37,7 @@ The application is now runnable using `java -jar target/quarkus-app/quarkus-run.
 
 If you want to build an _über-jar_, execute the following command:
 
-```shell script
+```shell
 ./mvnw package -Dquarkus.package.jar.type=uber-jar
 ```
 
@@ -47,13 +47,13 @@ The application, packaged as an _über-jar_, is now runnable using `java -jar ta
 
 You can create a native executable using:
 
-```shell script
+```shell
 ./mvnw package -Dnative
 ```
 
 Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
 
-```shell script
+```shell
 ./mvnw package -Dnative -Dquarkus.native.container-build=true
 ```
 
@@ -69,6 +69,6 @@ If you want to learn more about building native executables, please consult <htt
 
 ### Quinoa
 
-Quinoa codestart added a tiny Vite app in src/main/webui. The page is configured to be visible on <a href="/app">/app</a>.
+Quinoa codestart added a tiny Vite app in src/main/webui.
 
 [Related guide section...](https://quarkiverse.github.io/quarkiverse-docs/quarkus-quinoa/dev/index.html)
