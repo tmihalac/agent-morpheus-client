@@ -56,7 +56,7 @@ const buildRequestJson = (data) => {
 }
 
 export const newMorpheusRequest = async (data, sendToMorpheus = true) => {
-  return await fetch(`/reports/new?submit=${sendToMorpheus}`, {
+  return await fetch(`/api/v1/reports/new?submit=${sendToMorpheus}`, {
     method: "POST",
     headers: {
       'Accept': 'application/json',

@@ -1,7 +1,7 @@
 import { ClientRequestError } from "./ClientUtils";
 
 export const listProducts = async () => {
-  const response = await fetch('/reports/product', {
+  const response = await fetch('/api/v1/reports/product', {
     headers: {
       'Accept': 'application/json'
     }
@@ -27,7 +27,7 @@ export const deleteProductReports = async (filter) => {
 };
 
 export const deleteProductReport = async (productId) => {
-  const response = await fetch(`/reports/product/${productId}`, {
+  const response = await fetch(`/api/v1/reports/product/${productId}`, {
     method: 'DELETE'
   });
   if (!response.ok) {
@@ -37,7 +37,7 @@ export const deleteProductReport = async (productId) => {
 };
 
 export const getProduct = async (productId) => {
-  const response = await fetch(`/reports/product/${productId}`, {
+  const response = await fetch(`/api/v1/reports/product/${productId}`, {
     headers: {
       'Accept': 'application/json'
     }

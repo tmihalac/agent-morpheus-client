@@ -1,7 +1,7 @@
 import { newMorpheusRequest } from "../services/FormUtilsClient";
 
 const preProcessMorpheusRequests = async payloads => {
-  return await fetch(`/pre-processing`, {
+  return await fetch(`/api/v1/pre-processing`, {
     method: "POST",
     headers: {
       'Accept': 'application/json',
@@ -65,7 +65,7 @@ export const buildProductJson = (formData, failures) => {
   
 const saveProduct = async (formData, failures) => {
 	try {
-		await fetch('/product', {
+		await fetch('/api/v1/product', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
@@ -86,7 +86,7 @@ const generateComponentSbom = async ref => {
 	}
     
 	try {
-		const response = await fetch('/generate-sbom', {
+		const response = await fetch('/api/v1/generate-sbom', {
 			method: 'POST',
 			headers: { 'Content-Type': 'text/plain' },
 			body: image
@@ -105,7 +105,7 @@ const generateComponentSbom = async ref => {
 };
 
 const lookupCachedComponent = async ref => {
-	let url = '/reports';
+	let url = '/api/v1/reports';
 	const {repositoryUrl, tag} = parseReferenceParams(ref);
 
 	const filterUrl = `${url}?imageName=${repositoryUrl}&imageTag=${tag}`

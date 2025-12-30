@@ -43,7 +43,7 @@ export const deleteReports = async (filter) => {
 };
 
 export const deleteReport = async (reportId) => {
-  const response = await fetch(`/reports/${reportId}`, {
+  const response = await fetch(`/api/v1/reports/${reportId}`, {
     method: 'DELETE'
   });
   if (!response.ok) {
@@ -53,7 +53,7 @@ export const deleteReport = async (reportId) => {
 };
 
 export const retryReport = async (reportId) => {
-  const response = await fetch(`/reports/${reportId}/retry`, {
+  const response = await fetch(`/api/v1/reports/${reportId}/retry`, {
     method: 'POST'
   });
   if (!response.ok) {
@@ -63,7 +63,7 @@ export const retryReport = async (reportId) => {
 };
 
 export const viewReport = async (reportId) => {
-  const response = await fetch(`/reports/${reportId}`, {
+  const response = await fetch(`/api/v1/reports/${reportId}`, {
     headers: {
       'Accept': 'application/json'
     }

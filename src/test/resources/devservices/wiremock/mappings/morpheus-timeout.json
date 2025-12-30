@@ -17,7 +17,7 @@
       "name": "webhook",
       "parameters": {
         "method": "POST",
-        "url": "http://localhost:8080/reports",
+        "url": "http://localhost:8080/api/v1/reports",
         "headers": {
           "Content-Type": "application/json"
         },
