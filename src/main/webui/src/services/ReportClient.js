@@ -9,7 +9,7 @@ export const listReports = async (filter, page, perPage) => {
   });
   queryParams.set("page", page - 1);
   queryParams.set("pageSize", perPage);
-  let url = '/reports';
+  let url = '/api/v1/reports';
   if(queryParams.size > 0) {
     url += '?' + queryParams;
   }
@@ -29,7 +29,7 @@ export const listReports = async (filter, page, perPage) => {
 
 };
 export const deleteReports = async (filter) => {
-  let url = '/reports';
+  let url = '/api/v1/reports';
   if(filter.size > 0) {
     url += '?' + filter.toString();
   }
