@@ -13,7 +13,7 @@ export const listProducts = async () => {
 
 };
 export const deleteProductReports = async (filter) => {
-  let url = '/reports/product';
+  let url = '/api/v1/reports/product';
   if(filter.size > 0) {
     url += '?' + filter.toString();
   }
