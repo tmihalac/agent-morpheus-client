@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.redhat.ecosystemappeng.morpheus.client.GitHubService;
+import com.redhat.ecosystemappeng.morpheus.config.AppConfig;
 import com.redhat.ecosystemappeng.morpheus.model.PaginatedResult;
 import com.redhat.ecosystemappeng.morpheus.model.Pagination;
 import com.redhat.ecosystemappeng.morpheus.model.Report;
@@ -60,11 +61,6 @@ import static com.redhat.ecosystemappeng.morpheus.tracing.TextMapPropagatorImpl.
 public class ReportService {
 
   private static final Logger LOGGER = Logger.getLogger(ReportService.class);
-
-  private static final String COMMIT_ID_PROPERTY = "syft:image:labels:io.openshift.build.commit.id";
-  private static final String COMMIT_ID_PROPERTY_GENERAL = "image.source.commit-id";
-  private static final String SOURCE_LOCATION_PROPERTY = "syft:image:labels:io.openshift.build.source-location";
-  private static final String SOURCE_LOCATION_PROPERTY_GENERAL = "image.source-location";
   private static final String PACKAGE_TYPE_PROPERTY = "syft:package:type";
   private static final Pattern PURL_PKG_TYPE = Pattern.compile("pkg\\:(\\w+)\\/.*");
   public static final String HOSTED_GITHUB_COM = "github.com";
@@ -72,6 +68,9 @@ public class ReportService {
 
   @RestClient
   GitHubService gitHubService;
+
+  @Inject
+  AppConfig appConfig;
 
   @Inject
   ReportRepositoryService repository;
@@ -364,35 +363,25 @@ public class ReportService {
       }
     }
 
-  private static String getSourceLocationFromMetadataLabels(HashMap<String, String> properties) {
-    String sourceLocationValue =  properties.get(SOURCE_LOCATION_PROPERTY_GENERAL);
-    
-    if(Objects.isNull(sourceLocationValue))
-    {
-      sourceLocationValue = properties.get(SOURCE_LOCATION_PROPERTY);
-    }
-
-    if(Objects.isNull(sourceLocationValue))
-    {
-      throw new IllegalArgumentException("SBOM is missing required field: " + SOURCE_LOCATION_PROPERTY_GENERAL + " or " + SOURCE_LOCATION_PROPERTY);
-    }
-
-    return sourceLocationValue;
+  private String getSourceLocationFromMetadataLabels(Map<String, String> properties) {
+    return appConfig.image().source().locationKeys().stream()
+        .map(String::trim)
+        .map(properties::get)
+        .filter(Objects::nonNull)
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException(
+            "SBOM is missing required field. Checked keys: " + appConfig.image().source().locationKeys()));
   }
 
-  private static String getCommitIdFromMetadataLabels(HashMap<String, String> properties) {
-    String commitIdIdValue = properties.get(COMMIT_ID_PROPERTY_GENERAL);
-    
-    if(Objects.isNull(commitIdIdValue)) {
-      commitIdIdValue = properties.get(COMMIT_ID_PROPERTY);
-    }
 
-    if(Objects.isNull(commitIdIdValue))
-    {
-      throw new IllegalArgumentException("SBOM is missing required field: " + COMMIT_ID_PROPERTY_GENERAL + " or " + COMMIT_ID_PROPERTY);
-    }
-
-    return commitIdIdValue;
+  private String getCommitIdFromMetadataLabels(HashMap<String, String> properties) {
+    return appConfig.image().source().commitIdKeys().stream()
+        .map(String::trim)
+        .map(properties::get)
+        .filter(Objects::nonNull)
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException(
+            "SBOM is missing required field. Checked keys: " + appConfig.image().source().commitIdKeys()));
   }
 
   private JsonNode buildSbomInfo(ReportRequest request) {
