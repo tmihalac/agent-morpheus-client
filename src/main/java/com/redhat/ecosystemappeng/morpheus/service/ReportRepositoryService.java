@@ -19,7 +19,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -172,10 +171,7 @@ public class ReportRepositoryService {
     
     Set<String> productIds = getProductId(ids);
     
-    Document outputDoc = objectMapper.readValue(report.get("output").toPrettyString(),
-        new TypeReference<Document>() {
-
-        });
+    Document outputDoc = objectMapper.readValue(report.get("output").toPrettyString(), Document.class);
     var scan = report.get("input").get("scan").toPrettyString();
     var info = report.get("info").toPrettyString();
     var updates = Updates.combine(Updates.set("input.scan", Document.parse(scan)),
