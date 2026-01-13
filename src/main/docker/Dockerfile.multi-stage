@@ -1,6 +1,11 @@
 ## Stage 1 : build with maven builder image with native capabilities
 FROM registry.redhat.io/quarkus/mandrel-for-jdk-21-rhel8:23.1 AS build
 
+# Build profile - affects build-time properties only
+# Default: prod (OpenShift OAuth). Override with --build-arg QUARKUS_PROFILE=external-idp
+# Note: Runtime profile is set via QUARKUS_PROFILE env var at container startup
+ARG QUARKUS_PROFILE=prod
+
 COPY --chown=quarkus:quarkus mvnw /code/mvnw
 COPY --chown=quarkus:quarkus .mvn /code/.mvn
 COPY --chown=quarkus:quarkus pom.xml /code/
@@ -10,7 +15,7 @@ USER quarkus
 WORKDIR /code
 RUN ./mvnw -B -Pnative org.apache.maven.plugins:maven-dependency-plugin:3.6.1:go-offline
 COPY --chown=quarkus:quarkus src /code/src
-RUN ./mvnw verify -B -Pnative -Dmaven.test.skip=true -Dquarkus.native.native-image-xmx=8g
+RUN ./mvnw verify -B -Pnative -Dmaven.test.skip=true -Dquarkus.profile=${QUARKUS_PROFILE} -Dquarkus.native.native-image-xmx=8g
 
 RUN curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /tmp
 
