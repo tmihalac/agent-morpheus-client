@@ -9,6 +9,7 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import jakarta.ws.rs.NotFoundException;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
@@ -68,9 +69,12 @@ public class BatchRepositoryService extends AuditRepository {
         collection.deleteOne(Filters.eq(INTERNAL_COLLECTION_ID, new ObjectId(id)));
     }
 
-    public void removeByBatchId(String id) {
+    public boolean removeByBatchId(String id) {
         MongoCollection<Document> collection = getBatchesCollection();
-        collection.deleteOne(Filters.eq(BATCH_ID_FIELD_NAME, id));
+        Document deletedDocument = collection.findOneAndDelete(Filters.eq(BATCH_ID_FIELD_NAME, id));
+
+        return Objects.nonNull(deletedDocument);
+
     }
 
     public void removeMany(List<String> ids) {

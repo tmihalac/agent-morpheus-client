@@ -3,20 +3,26 @@ package com.redhat.ecosystemappeng.morpheus.service.audit;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.ecosystemappeng.morpheus.model.audit.Batch;
+import com.redhat.ecosystemappeng.morpheus.model.audit.Job;
 import com.redhat.ecosystemappeng.morpheus.repository.BatchRepositoryService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import jakarta.ws.rs.NotFoundException;
 import org.jboss.logging.Logger;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static com.redhat.ecosystemappeng.morpheus.repository.AuditRepository.ALL_LANGUAGES_BATCH_LANGUAGE_ID;
 
 @ApplicationScoped
 public class BatchService extends AuditService {
 
-    private static final Logger LOGGER = Logger.getLogger(BatchService.class);
-
+  private static final Logger LOGGER = Logger.getLogger(BatchService.class);
 
   @Inject
   BatchRepositoryService repository;
@@ -24,48 +30,52 @@ public class BatchService extends AuditService {
   @Inject
   ObjectMapper mapper;
 
-  @Inject
-  ObjectMapper objectMapper;
+  public void save(Batch batch)  {
+    LOGGER.infof("Saving batch %s", batch.getBatchId());
 
-  public void save(Batch batch) throws JsonProcessingException {
-    LOGGER.debugf("Saving batch %s", batch.getBatchId());
-    String batchJSON = mapper.writeValueAsString(batch);
-    repository.save(batchJSON);
+      String batchJSON = null;
+      try {
+          batchJSON = mapper.writeValueAsString(batch);
+          LOGGER.debugf("batch payload to be written to DB: %s %s", System.lineSeparator() ,mapper.writerWithDefaultPrettyPrinter().writeValueAsString(batch));
+      } catch (JsonProcessingException e) {
+          throw new RuntimeException(e);
+      }
+      repository.save(batchJSON);
   }
   
-  public Batch getById(String id) throws JsonProcessingException {
+  public Batch getById(String id) {
     LOGGER.debugf("Getting batch %s by internal id", id);
     String batchJson = repository.findById(id);
     return deserializeOneBatch(batchJson);
 
   }
 
-  public Batch getByJobId(String batchId) throws JsonProcessingException {
+  public Batch getByBatchId(String batchId)  {
     LOGGER.debugf("Getting Batch %s by batch Id", batchId);
     String batchJSON = repository.findByBatchId(batchId);
     return deserializeOneBatch(batchJSON);
   }
 
 
-  public List<Batch> getAllBatches() throws JsonProcessingException {
+  public List<Batch> getAllBatches()  {
     LOGGER.debugf("Getting all batches");
       List<String> allBatches = repository.findAll();
       return transformBatchesJsonsToPojos(allBatches, false);
   }
 
-  public List<Batch> getMixedLanguagesBatches() throws JsonProcessingException {
+  public List<Batch> getMixedLanguagesBatches() {
     LOGGER.debugf("Getting all Mixed Languages batches");
       List<String> allBatches = repository.findAllMixedLanguagesBatches();
       return transformBatchesJsonsToPojos(allBatches, false);
   }
 
-  public List<Batch> getAllBatchesByLanguage(String language) throws JsonProcessingException {
+  public List<Batch> getAllBatchesByLanguage(String language) {
     LOGGER.debugf("Getting all batches of language %s", language);
       List<String> allBatches = repository.findAllBatchesByLanguage(language);
       return transformBatchesJsonsToPojos(allBatches, false);
   }
 
-  public Batch getLatestBatch(boolean languageSpecific, String language) throws JsonProcessingException {
+  public Batch getLatestBatch(boolean languageSpecific, String language) {
     LOGGER.debugf("Getting latest %s batch", languageSpecific ? language : "Mixed Languages");
       String latestExecutedBatch = repository.findLatestExecutedBatch(languageSpecific, language);
       return deserializeOneBatch(latestExecutedBatch);
@@ -80,7 +90,9 @@ public class BatchService extends AuditService {
 
   public void removeByBatchId(String batchId) {
     LOGGER.debugf("Removing batch batchId %s", batchId);
-    repository.removeByBatchId(batchId);
+    if(!repository.removeByBatchId(batchId)) {
+        throw new NotFoundException(String.format("BatchId= %s not found, thus cannot be deleted", batchId));
+    }
   }
 
   public void removeMany(List<String> ids) {
@@ -93,7 +105,7 @@ public class BatchService extends AuditService {
     repository.removeManyBatchIds(ids);
   }
 
-  private List<Batch> transformBatchesJsonsToPojos(List<String> allJobs, boolean allowParallelProcessing) throws JsonProcessingException {
+  private List<Batch> transformBatchesJsonsToPojos(List<String> allJobs, boolean allowParallelProcessing) {
         if (allowParallelProcessing && allJobs.size() >= THRESHOLD_NUMBER_OF_DB_ITEMS_FOR_PARALLEL_PROCESSING) {
             return allJobs.parallelStream().map(deserializeJob()).collect(Collectors.toList());
         }
@@ -104,17 +116,39 @@ public class BatchService extends AuditService {
     }
 
 
-  private Function<String, Batch> deserializeJob() throws JsonProcessingException {
-        return json -> {
-            try {
-                return deserializeOneBatch(json);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
-        };
+  private Function<String, Batch> deserializeJob()  {
+        return this::deserializeOneBatch;
+
     }
-  private Batch deserializeOneBatch(String batchJson) throws JsonProcessingException {
-      return this.objectMapper.readValue(batchJson, Batch.class);
+  private Batch deserializeOneBatch(String batchJson)  {
+      try {
+          return this.mapper.readValue(batchJson, Batch.class);
+      } catch (JsonProcessingException e) {
+          throw new RuntimeException(e);
+      }
+  }
+
+    public List<Batch> routeAllEndpointToServiceMethod(@Valid @Pattern(regexp = REGEX_ALLOWED_LANGUAGES) String language) {
+      if (language.trim().equalsIgnoreCase(ALL_LANGUAGES_BATCH_LANGUAGE_ID)) {
+          return this.getMixedLanguagesBatches();
+      }
+      else if (language.trim().isEmpty()) {
+         return this.getAllBatches();
+      }
+      else {
+          return this.getAllBatchesByLanguage(language);
+      }
     }
 
+    public Batch routeLatestToServiceMethod(String language) {
+        if (language.trim().isBlank()) {
+            throw new IllegalArgumentException("Language parameter cannot be blank for retrieving latest batch, must be a specific allowed language or 'all'");
+        }
+        if(language.trim().equalsIgnoreCase(ALL_LANGUAGES_BATCH_LANGUAGE_ID)) {
+            return this.getLatestBatch(false, language);
+        }
+        else {
+            return this.getLatestBatch(true, language);
+        }
+    }
 }

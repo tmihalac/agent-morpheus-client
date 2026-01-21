@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 import static com.redhat.ecosystemappeng.morpheus.repository.JobRepositoryService.*;
+import static com.redhat.ecosystemappeng.morpheus.service.audit.AuditService.REGEX_ALLOWED_LANGUAGES;
+import static com.redhat.ecosystemappeng.morpheus.service.audit.AuditService.REGEX_PATTERN_FOR_CVE;
 
 @RegisterForReflection
 public class Job {
@@ -22,10 +24,10 @@ public class Job {
     @JsonProperty("duration_in_seconds")
     private String durationInSeconds;
     @JsonProperty(CVE_FIELD_NAME)
-    @Pattern(regexp = "CVE-\\d{4}-\\d{4,7}")
+    @Pattern(regexp = REGEX_PATTERN_FOR_CVE)
     private String cve;
     @JsonProperty("app_language")
-    @Pattern(regexp = "go|python|c|javascript|java|\\s")
+    @Pattern(regexp = REGEX_ALLOWED_LANGUAGES)
     private String appLanguage;
     @JsonProperty(COMPONENT_FIELD_NAME)
     private String component;

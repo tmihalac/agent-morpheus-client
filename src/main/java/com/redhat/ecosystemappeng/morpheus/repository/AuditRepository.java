@@ -1,5 +1,8 @@
 package com.redhat.ecosystemappeng.morpheus.repository;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.inject.Inject;
+
 public class AuditRepository {
 
     public static final String JOBS_COLLECTION = "jobs";
@@ -13,5 +16,8 @@ public class AuditRepository {
     public static final String COMPONENT_FIELD_NAME = "component";
     public static final String COMPONENT_VERSION_FIELD_NAME = "component_version";
     public static final String INTERNAL_COLLECTION_ID = "_id";
+
+    @Inject
+    protected ObjectMapper mapper;
 
 }
