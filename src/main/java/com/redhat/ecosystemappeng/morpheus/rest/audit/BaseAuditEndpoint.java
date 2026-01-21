@@ -41,11 +41,11 @@ public class BaseAuditEndpoint {
       return RestResponse.status(Response.Status.INTERNAL_SERVER_ERROR, "General Error encountered, Contact admin");
    }
 
-  @ServerExceptionMapper
-  public RestResponse<String> mapGeneral(Exception ex) {
-      LOGGER.errorf("General unexpected error encountered during API request, details of error -> %s", ex.getMessage(), ex);
-      return RestResponse.status(Response.Status.INTERNAL_SERVER_ERROR, "General Error encountered, Contact admin");
-   }
+//  @ServerExceptionMapper
+//  public RestResponse<String> mapGeneral(Exception ex) {
+//      LOGGER.errorf("General unexpected error encountered during API request, details of error -> %s", ex.getMessage(), ex);
+//      return RestResponse.status(Response.Status.INTERNAL_SERVER_ERROR, "General Error encountered, Contact admin");
+//   }
 
 
 }

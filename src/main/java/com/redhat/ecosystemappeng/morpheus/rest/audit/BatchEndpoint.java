@@ -171,7 +171,7 @@ public class BatchEndpoint extends BaseAuditEndpoint {
   })
   public Batch getRecentBatchId(
     @Parameter(
-      description = "the language of the batch run, for returning the recent batch run of mixed language batches, pass 'all'",
+      description = "the language of the batch run, for returning the recent batch run of mixed languages batches, pass 'all'",
       required = true
     )
     @Valid @Pattern (regexp = REGEX_ALLOWED_LANGUAGES) @QueryParam("language") String language)  {

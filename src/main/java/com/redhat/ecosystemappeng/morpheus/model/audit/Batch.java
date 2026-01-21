@@ -17,39 +17,43 @@ public class Batch {
     @JsonProperty(BATCH_ID_FIELD_NAME)
     private String batchId;
     @PastOrPresent
-    @JsonFormat(pattern = "yyyy-MM-ddT HH:mm:ss.MMMMMM")
     @JsonProperty(EXECUTION_START_TIMESTAMP)
     private LocalDateTime executionStartTimestamp;
-
-    @JsonFormat(pattern = "yyyy-MM-ddT HH:mm:ss.MMMMMM")
+    @JsonProperty("execution_end_timestamp")
     private LocalDateTime executionEndTimestamp;
     @JsonProperty("app_language")
     @Pattern(regexp = "go|python|c|javascript|java|all")
     private String appLanguage;
     @Nullable
-    private Duration duration;
+    private String duration;
     @PositiveOrZero
     @JsonProperty("total_number_of_executed_jobs")
     private Integer numberOfExecutedJobs;
     @DecimalMin("0.00")
-    @DecimalMin("1.00")
+    @DecimalMax("1.00")
+    @JsonProperty("confusion_matrix_accuracy")
     private Float confusionMatrixAccuracy;
     @DecimalMin("0.00")
-    @DecimalMin("1.00")
+    @DecimalMax("1.00")
+    @JsonProperty("confusion_matrix_precision")
     private Float confusionMatrixPrecision;
     @DecimalMin("0.00")
-    @DecimalMin("1.00")
+    @DecimalMax("1.00")
+    @JsonProperty("confusion_matrix_f1_score")
     private Float confusionMatrixF1Score;
     @DecimalMin("0.00")
-    @DecimalMin("1.00")
+    @DecimalMax("1.00")
+    @JsonProperty("confusion_matrix_recall")
     private Float confusionMatrixRecall;
     @PositiveOrZero
     @JsonProperty("total_number_of_failures")
     private Integer numberOfFailures;
     @NotNull
     @Size(min = 0)
+    @JsonProperty("regressive_jobs_ids")
     private List<String> regressiveJobIds;
     @PositiveOrZero
+    @JsonProperty("number_of_regressive_jobs_ids")
     private Integer numberOfRegressiveJobIds;
 
 
@@ -87,11 +91,11 @@ public class Batch {
     }
 
     @Nullable
-    public Duration getDuration() {
+    public String getDuration() {
         return duration;
     }
 
-    public void setDuration(@Nullable Duration duration) {
+    public void setDuration(@Nullable String duration) {
         this.duration = duration;
     }
 

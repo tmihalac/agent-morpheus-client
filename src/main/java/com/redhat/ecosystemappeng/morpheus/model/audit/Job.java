@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Pattern;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -19,7 +20,6 @@ public class Job {
     @JsonProperty(JOB_ID_FIELD_NAME)
     private String jobId;
     @PastOrPresent
-    @JsonFormat(pattern = "yyyy-MM-ddT HH:mm:ss.MMMMMM")
     private LocalDateTime executionTimestamp;
     @JsonProperty("duration_in_seconds")
     private String durationInSeconds;
@@ -47,9 +47,9 @@ public class Job {
     private String batchId;
     @JsonProperty("success_status")
     private Boolean successStatus;
-    @JsonAnySetter
     @JsonProperty("env_vars")
-    private Map<String, String> envVars;
+    @Schema(required = true, description = "comma delimited key=value pairs")
+    private String envVars;
     @JsonAnySetter
     @JsonProperty("job_output")
     private Map<String, Object> jobOutput;
@@ -159,11 +159,11 @@ public class Job {
         this.successStatus = successStatus;
     }
 
-    public Map<String, String> getEnvVars() {
+    public String getEnvVars() {
         return envVars;
     }
 
-    public void setEnvVars(Map<String, String> envVars) {
+    public void setEnvVars(String envVars) {
         this.envVars = envVars;
     }
 
