@@ -3,7 +3,6 @@ package com.redhat.ecosystemappeng.morpheus.service.audit;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.ecosystemappeng.morpheus.model.audit.Batch;
-import com.redhat.ecosystemappeng.morpheus.model.audit.Job;
 import com.redhat.ecosystemappeng.morpheus.repository.BatchRepositoryService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -78,11 +77,26 @@ public class BatchService extends AuditService {
   public Batch getLatestBatch(boolean languageSpecific, String language) {
     LOGGER.debugf("Getting latest %s batch", languageSpecific ? language : "Mixed Languages");
       String latestExecutedBatch = repository.findLatestExecutedBatch(languageSpecific, language);
-      return deserializeOneBatch(latestExecutedBatch);
+      if(Objects.nonNull(latestExecutedBatch)) {
+        return deserializeOneBatch(latestExecutedBatch);
+      }
+      else {
+          throw new NotFoundException("There are no batches found for" + getExceptionMessageBasedOnCriteria(languageSpecific, language));
+      }
   }
 
+    private static String getExceptionMessageBasedOnCriteria(boolean languageSpecific, String language) {
+        if (languageSpecific) {
+            return String.format(" language %s ", language);
+        }
+        else {
+            return " mixed languages";
+        }
 
-  public void remove(String id) {
+    }
+
+
+    public void remove(String id) {
     LOGGER.debugf("Removing Batch internal id %s", id);
     repository.removeById(id);
 
