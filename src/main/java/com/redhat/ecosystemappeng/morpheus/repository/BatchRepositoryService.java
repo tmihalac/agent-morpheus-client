@@ -9,7 +9,6 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import jakarta.ws.rs.NotFoundException;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
@@ -99,10 +98,10 @@ public class BatchRepositoryService extends AuditRepository {
     {   Document doc;
         Bson language_criteria;
         if (languageSpecific) {
-            language_criteria =  Filters.eq(LANGUAGE,language);
+            language_criteria =  Filters.eq(LANGUAGE_FIELD_NAME, language);
         }
         else {
-            language_criteria =  Filters.eq(LANGUAGE,ALL_LANGUAGES_BATCH_LANGUAGE_ID);
+            language_criteria =  Filters.eq(LANGUAGE_FIELD_NAME, ALL_LANGUAGES_BATCH_LANGUAGE_ID);
         }
         doc =  this.getBatchesCollection().find(language_criteria).sort(Sorts.descending(EXECUTION_START_TIMESTAMP)).first();
         if(Objects.nonNull(doc)) {
@@ -115,7 +114,7 @@ public class BatchRepositoryService extends AuditRepository {
 
     private List<Document> findAllBatchesByLanguageInternal(String language) {
         List<Document> languageBatches = new ArrayList<>();
-        getBatchesCollection().find(Filters.eq(LANGUAGE, language)).into(languageBatches);
+        getBatchesCollection().find(Filters.eq(LANGUAGE_FIELD_NAME, language)).into(languageBatches);
         return languageBatches;
     }
 
@@ -129,7 +128,7 @@ public class BatchRepositoryService extends AuditRepository {
         MongoCollection<Document> batchCollection = getBatchesCollection();
         batchCollection.createIndex(Indexes.descending(EXECUTION_START_TIMESTAMP));
         batchCollection.createIndex(Indexes.ascending(BATCH_ID_FIELD_NAME));
-        batchCollection.createIndex(Indexes.ascending(LANGUAGE));
+        batchCollection.createIndex(Indexes.ascending(LANGUAGE_FIELD_NAME));
     }
 
     private MongoCollection<Document> getBatchesCollection() {

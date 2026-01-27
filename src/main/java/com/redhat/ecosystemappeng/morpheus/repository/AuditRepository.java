@@ -7,7 +7,7 @@ public class AuditRepository {
 
     public static final String JOBS_COLLECTION = "jobs";
     public static final String BATCHES_COLLECTION = "batches";
-    public static final String LANGUAGE = "language";
+    public static final String LANGUAGE_FIELD_NAME = "app_language";
     public static final String ALL_LANGUAGES_BATCH_LANGUAGE_ID = "all";
     public static final String EXECUTION_START_TIMESTAMP = "execution_start_timestamp";
     public static final String JOB_ID_FIELD_NAME = "job_id";
