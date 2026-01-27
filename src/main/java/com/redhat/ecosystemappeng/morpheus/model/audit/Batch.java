@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.*;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,6 +40,10 @@ public class Batch {
     @NotEmpty
     @JsonProperty("agent_config_b64")
     private String agentConfigB64;
+    @NotEmpty
+    @JsonProperty("env_vars")
+    @Schema(required = true, description = "comma delimited key=value pairs")
+    private String envVars;
     @DecimalMin("0.00")
     @DecimalMax("1.00")
     @JsonProperty("confusion_matrix_accuracy")
@@ -194,5 +200,13 @@ public class Batch {
 
     public void setAgentConfigB64(String agentConfigB64) {
         this.agentConfigB64 = agentConfigB64;
+    }
+
+    public String getEnvVars() {
+        return envVars;
+    }
+
+    public void setEnvVars(String envVars) {
+        this.envVars = envVars;
     }
 }
