@@ -47,7 +47,7 @@ public class BatchRepositoryService extends AuditRepository {
 
     public String findByBatchId(String batchId) {
         MongoCollection<Document> collection = getBatchesCollection();
-        Document jobDoc = collection.find(Filters.eq(JOB_ID_FIELD_NAME, batchId )).first();
+        Document jobDoc = collection.find(Filters.eq(BATCH_ID_FIELD_NAME, batchId )).first();
         if (Objects.nonNull(jobDoc)) {
             return jobDoc.toJson();
         }
@@ -86,12 +86,24 @@ public class BatchRepositoryService extends AuditRepository {
 
     public List<String> findAllBatchesByLanguage(String language) {
         List<Document> languageBatches = findAllBatchesByLanguageInternal(language);
-        return transformToJsonsList(languageBatches);
+        if (!languageBatches.isEmpty()) {
+            return transformToJsonsList(languageBatches);
+        }
+        else{
+            return null;
+        }
+
     }
 
     public List<String> findAllMixedLanguagesBatches() {
         List<Document> languageBatches = findAllBatchesByLanguageInternal(ALL_LANGUAGES_BATCH_LANGUAGE_ID);
-        return transformToJsonsList(languageBatches);
+        if(!languageBatches.isEmpty()){
+            return transformToJsonsList(languageBatches);
+        }
+        else {
+            return null;
+        }
+
     }
 
     public String findLatestExecutedBatch(boolean languageSpecific, String language)

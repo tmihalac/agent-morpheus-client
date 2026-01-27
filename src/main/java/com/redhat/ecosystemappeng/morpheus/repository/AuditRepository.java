@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 
 public class AuditRepository {
 
+//    Names of all fields in MongoDB Audit Collections
     public static final String JOBS_COLLECTION = "jobs";
     public static final String BATCHES_COLLECTION = "batches";
     public static final String LANGUAGE_FIELD_NAME = "app_language";
@@ -15,7 +16,11 @@ public class AuditRepository {
     public static final String CVE_FIELD_NAME = "cve";
     public static final String COMPONENT_FIELD_NAME = "component";
     public static final String COMPONENT_VERSION_FIELD_NAME = "component_version";
+    public static final String LLM_NODE_FIELD_NAME = "llm_node";
+    public static final String METRIC_NAME_FIELD_NAME = "metric_name";
+    public static final String METRIC_VALUE_FIELD_NAME = "metric_value";
     public static final String INTERNAL_COLLECTION_ID = "_id";
+
 
     @Inject
     protected ObjectMapper mapper;

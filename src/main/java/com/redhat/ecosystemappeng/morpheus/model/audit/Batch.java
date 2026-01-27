@@ -23,7 +23,7 @@ public class Batch {
     private LocalDateTime executionStartTimestamp;
     @JsonProperty("execution_end_timestamp")
     private LocalDateTime executionEndTimestamp;
-    @JsonProperty("app_language")
+    @JsonProperty(LANGUAGE_FIELD_NAME)
     @Pattern(regexp = "go|python|c|javascript|java|all")
     private String appLanguage;
     @Nullable

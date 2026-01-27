@@ -6,8 +6,10 @@ import com.redhat.ecosystemappeng.morpheus.service.audit.JobService;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
@@ -20,6 +22,8 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.jboss.logging.Logger;
+
+import java.net.URI;
 import java.util.List;
 
 
@@ -35,13 +39,16 @@ public class JobEndpoint extends BaseAuditEndpoint {
   @Inject
   JobService jobService;
 
+  @Context
+  UriInfo info;
+
   @POST
   @Operation(
     summary = "Create List of new jobs containing metadata of executions of analysis",
     description = "Creates multiple jobs containing audit metadata about analysis runs")
   @APIResponses({
     @APIResponse(
-      responseCode = "201",
+      responseCode = "202",
       description = "jobs creation accepted"
     ),
     @APIResponse(
@@ -95,7 +102,7 @@ public class JobEndpoint extends BaseAuditEndpoint {
       Job job) {
 
         jobService.save(job);
-        return Response.accepted().build();
+        return Response.created(URI.create(String.format("%s%s/?jobId=%s", this.info.getBaseUri().toString(), this.info.getPathSegments().getFirst() , job.getJobId()))).build();
   }
 
 

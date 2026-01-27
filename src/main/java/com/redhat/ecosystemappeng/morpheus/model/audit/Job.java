@@ -20,13 +20,14 @@ public class Job {
     @JsonProperty(JOB_ID_FIELD_NAME)
     private String jobId;
     @PastOrPresent
+    @JsonProperty(EXECUTION_START_TIMESTAMP)
     private LocalDateTime executionTimestamp;
     @JsonProperty("duration_in_seconds")
     private String durationInSeconds;
     @JsonProperty(CVE_FIELD_NAME)
     @Pattern(regexp = REGEX_PATTERN_FOR_CVE)
     private String cve;
-    @JsonProperty("app_language")
+    @JsonProperty(LANGUAGE_FIELD_NAME)
     @Pattern(regexp = REGEX_ALLOWED_LANGUAGES)
     private String appLanguage;
     @JsonProperty(COMPONENT_FIELD_NAME)

@@ -7,8 +7,10 @@ import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
@@ -21,6 +23,8 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.jboss.logging.Logger;
+
+import java.net.URI;
 import java.util.List;
 
 import static com.redhat.ecosystemappeng.morpheus.service.audit.AuditService.REGEX_ALLOWED_LANGUAGES;
@@ -38,7 +42,11 @@ public class BatchEndpoint extends BaseAuditEndpoint {
   @Inject
   BatchService batchService;
 
-  @POST
+  @Context
+  UriInfo info;
+
+
+    @POST
   @Operation(
     summary = "Create one Batch containing metadata of multiple analysis jobs runs",
     description = "Creates 1 batch audit data")
@@ -62,7 +70,7 @@ public class BatchEndpoint extends BaseAuditEndpoint {
       @Valid Batch batch) {
 
         batchService.save(batch);
-        return Response.accepted().build();
+        return Response.created(URI.create(String.format("%s/%s",this.info.getRequestUri().toString() , batch.getBatchId()))).build();
   }
 
 

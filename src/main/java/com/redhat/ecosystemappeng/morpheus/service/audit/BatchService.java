@@ -52,7 +52,13 @@ public class BatchService extends AuditService {
   public Batch getByBatchId(String batchId)  {
     LOGGER.debugf("Getting Batch %s by batch Id", batchId);
     String batchJSON = repository.findByBatchId(batchId);
-    return deserializeOneBatch(batchJSON);
+    if(Objects.nonNull(batchJSON)) {
+       return deserializeOneBatch(batchJSON);
+    }
+    else {
+        throw new NotFoundException("Batch with id=" + batchId + " not found");
+    }
+
   }
 
 
@@ -65,13 +71,25 @@ public class BatchService extends AuditService {
   public List<Batch> getMixedLanguagesBatches() {
     LOGGER.debugf("Getting all Mixed Languages batches");
       List<String> allBatches = repository.findAllMixedLanguagesBatches();
-      return transformBatchesJsonsToPojos(allBatches, false);
+      if (Objects.nonNull(allBatches)) {
+          return transformBatchesJsonsToPojos(allBatches, false);
+      }
+      else {
+          throw new NotFoundException("Batches documents for mixed/all languages were not found");
+      }
+
   }
 
   public List<Batch> getAllBatchesByLanguage(String language) {
     LOGGER.debugf("Getting all batches of language %s", language);
       List<String> allBatches = repository.findAllBatchesByLanguage(language);
-      return transformBatchesJsonsToPojos(allBatches, false);
+      if(Objects.nonNull(allBatches)) {
+          return transformBatchesJsonsToPojos(allBatches, false);
+      }
+      else{
+          throw new NotFoundException("Batches documents for language=" + language + " were not found");
+      }
+
   }
 
   public Batch getLatestBatch(boolean languageSpecific, String language) {
