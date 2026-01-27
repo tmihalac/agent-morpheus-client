@@ -29,6 +29,15 @@ public class Batch {
     @PositiveOrZero
     @JsonProperty("total_number_of_executed_jobs")
     private Integer numberOfExecutedJobs;
+    @NotEmpty
+    @JsonProperty("agent_git_commit")
+    private String agentGitCommit;
+    @NotEmpty
+    @JsonProperty("agent_git_tag")
+    private String agentGitTag;
+    @NotEmpty
+    @JsonProperty("agent_config_b64")
+    private String agentConfigB64;
     @DecimalMin("0.00")
     @DecimalMax("1.00")
     @JsonProperty("confusion_matrix_accuracy")
@@ -161,5 +170,29 @@ public class Batch {
 
     public void setNumberOfRegressiveJobIds(Integer numberOfRegressiveJobIds) {
         this.numberOfRegressiveJobIds = numberOfRegressiveJobIds;
+    }
+
+    public String getAgentGitCommit() {
+        return agentGitCommit;
+    }
+
+    public void setAgentGitCommit(String agentGitCommit) {
+        this.agentGitCommit = agentGitCommit;
+    }
+
+    public String getAgentGitTag() {
+        return agentGitTag;
+    }
+
+    public void setAgentGitTag(String agentGitTag) {
+        this.agentGitTag = agentGitTag;
+    }
+
+    public String getAgentConfigB64() {
+        return agentConfigB64;
+    }
+
+    public void setAgentConfigB64(String agentConfigB64) {
+        this.agentConfigB64 = agentConfigB64;
     }
 }
