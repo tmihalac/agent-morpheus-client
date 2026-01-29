@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.ws.rs.NotFoundException;
 import org.jboss.logging.Logger;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -75,8 +76,11 @@ public class BatchService extends AuditService {
       if (Objects.nonNull(allBatches)) {
           return transformBatchesJsonsToPojos(allBatches, false);
       }
-      else {
+      else if (this.apiBlankListResultReturnsError) {
           throw new NotFoundException("Batches documents for mixed/all languages were not found");
+      }
+      else {
+          return Collections.emptyList();
       }
 
   }
@@ -87,7 +91,7 @@ public class BatchService extends AuditService {
       if(Objects.nonNull(allBatches)) {
           return transformBatchesJsonsToPojos(allBatches, false);
       }
-      else{
+      else if (this.apiBlankListResultReturnsError) {
           throw new NotFoundException("Batches documents for language=" + language + " were not found");
       }
 

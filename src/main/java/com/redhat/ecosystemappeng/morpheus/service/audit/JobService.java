@@ -85,8 +85,11 @@ public class JobService extends AuditService {
       if(Objects.nonNull(allJobs)){
           return transformJobsJsonsToPojos(allJobs);
       }
-      else {
+      else if (this.apiBlankListResultReturnsError) {
           throw new NotFoundException(String.format("There are no jobs associated with batchId= %s in the database", batchId));
+      }
+      else {
+          return List.of();
       }
   }
 
@@ -96,9 +99,13 @@ public class JobService extends AuditService {
       if (Objects.nonNull(allJobs)) {
           return transformJobsJsonsToPojos(allJobs);
       }
-      else {
+      else if (this.apiBlankListResultReturnsError){
           throw new NotFoundException(String.format("There are no jobs associated with cveId= %s in the database", cveId));
       }
+      else {
+          return List.of();
+      }
+
 
   }
 
@@ -108,8 +115,12 @@ public List<Job> getAllJobsByCveAndApplication(String cveId, String appName, Str
       if (Objects.nonNull(allJobs)) {
           return transformJobsJsonsToPojos(allJobs);
       }
-      else {
+
+      else if (this.apiBlankListResultReturnsError) {
           throw new NotFoundException(String.format("There are no jobs associated with cveId= %s, appName= %s and appversion= %s in the database", cveId, appName, appVersion));
+      }
+      else  {
+          return List.of();
       }
   }
 
