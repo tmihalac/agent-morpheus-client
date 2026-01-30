@@ -34,7 +34,7 @@ public class BatchService extends AuditService {
   public void save(Batch batch)  {
     LOGGER.infof("Saving batch %s", batch.getBatchId());
 
-      String batchJSON = null;
+      String batchJSON;
       try {
           batchJSON = mapper.writeValueAsString(batch);
           LOGGER.debugf("batch payload to be written to DB: %s %s", System.lineSeparator() ,mapper.writerWithDefaultPrettyPrinter().writeValueAsString(batch));
