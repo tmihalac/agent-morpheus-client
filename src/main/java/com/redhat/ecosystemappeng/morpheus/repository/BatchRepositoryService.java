@@ -132,10 +132,6 @@ public class BatchRepositoryService extends AuditRepository {
         return languageBatches;
     }
 
-    private static List<String> transformToJsonsList(List<Document> docs) {
-            return docs.stream().map(Document::toJson).collect(Collectors.toList());
-
-    }
 
     @PostConstruct
     public void dbInit() {

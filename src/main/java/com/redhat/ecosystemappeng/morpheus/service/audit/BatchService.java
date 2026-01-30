@@ -88,13 +88,15 @@ public class BatchService extends AuditService {
   public List<Batch> getAllBatchesByLanguage(String language) {
     LOGGER.debugf("Getting all batches of language %s", language);
       List<String> allBatches = repository.findAllBatchesByLanguage(language);
-      if(Objects.nonNull(allBatches)) {
+      if(Objects.nonNull(allBatches) && !allBatches.isEmpty()) {
           return transformBatchesJsonsToPojos(allBatches, false);
       }
       else if (this.apiBlankListResultReturnsError) {
           throw new NotFoundException("Batches documents for language=" + language + " were not found");
       }
-
+      else {
+          return Collections.emptyList();
+      }
   }
 
   public Batch getLatestBatch(boolean languageSpecific, String language, BatchType batchType) {

@@ -139,7 +139,7 @@ public class JobRepositoryService extends AuditRepository {
 
 
 
-    private static List<String> transformToJsonsList(List<Document> docs) {
+     List<String> transformToJsonsList(List<Document> docs) {
         if (docs.size() >= THRESHOLD_NUMBER_OF_DB_ITEMS_FOR_PARALLEL_PROCESSING) {
             return docs.parallelStream().map(Document::toJson).collect(Collectors.toList());
         }
