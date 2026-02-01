@@ -19,6 +19,8 @@ public class Eval {
     @PastOrPresent
     @JsonProperty(EXECUTION_START_TIMESTAMP)
     private LocalDateTime executionTimestamp;
+    @JsonProperty(TRACE_ID_FIELD_NAME)
+    private String traceId;
     @JsonProperty(CVE_FIELD_NAME)
     @Pattern(regexp = REGEX_PATTERN_FOR_CVE)
     @NotEmpty
@@ -30,7 +32,6 @@ public class Eval {
     @NotEmpty
     private String componentVersion;
     @JsonProperty(LLM_NODE_FIELD_NAME)
-    @NotEmpty
     private LLMStage llmNode;
     @JsonProperty(METRIC_NAME_FIELD_NAME)
     @NotEmpty
@@ -102,5 +103,27 @@ public class Eval {
 
     public void setLlmNode(LLMStage llmNode) {
         this.llmNode = llmNode;
+    }
+
+    public String getTraceId() {
+        return traceId;
+    }
+
+    public void setTraceId(String traceId) {
+        this.traceId = traceId;
+    }
+
+    @Override
+    public String toString() {
+        return "Eval{" +
+                "jobId='" + jobId + '\'' +
+                ", traceId='" + traceId + '\'' +
+                ", cve='" + cve + '\'' +
+                ", component='" + component + '\'' +
+                ", componentVersion='" + componentVersion + '\'' +
+                ", llmNode=" + llmNode +
+                ", metricName='" + metricName + '\'' +
+                ", metricValue='" + metricValue + '\'' +
+                '}';
     }
 }

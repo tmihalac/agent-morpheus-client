@@ -153,6 +153,7 @@ public class JobRepositoryService extends AuditRepository {
     @PostConstruct
     public void dbInit() {
         MongoCollection<Document> jobsCollection = getJobsCollection();
+        jobsCollection.createIndex(Indexes.descending(EXECUTION_START_TIMESTAMP));
         jobsCollection.createIndex(Indexes.ascending(JOB_ID_FIELD_NAME));
         jobsCollection.createIndex(Indexes.ascending(BATCH_ID_FIELD_NAME));
         jobsCollection.createIndex(Indexes.ascending(CVE_FIELD_NAME, COMPONENT_FIELD_NAME, COMPONENT_VERSION_FIELD_NAME));

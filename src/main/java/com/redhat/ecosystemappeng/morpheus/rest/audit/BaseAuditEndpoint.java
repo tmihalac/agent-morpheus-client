@@ -20,7 +20,7 @@ public class BaseAuditEndpoint {
 
   public RestResponse<String> mapValidation(ValidationException ex) {
       LOGGER.error("Input validation of request failed, details => " , ex);
-      return RestResponseBuilderImpl.create(RestResponse.Status.BAD_REQUEST,"Input validation error on request body/query parameters, details:"  + ex.getMessage()).type(MediaType.TEXT_PLAIN).build();
+      return RestResponseBuilderImpl.create(RestResponse.Status.BAD_REQUEST,"Input validation error on request body/query parameters/path params, details:"  + ex.getMessage()).type(MediaType.TEXT_PLAIN).build();
 //      status(Response.Status.BAD_REQUEST, ");
    }
 

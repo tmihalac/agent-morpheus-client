@@ -69,9 +69,9 @@ public class EvalEndpoint extends BaseAuditEndpoint {
     @Valid
      List<Eval> evals) {
 
-//        evalService.saveMany(evals);
-//        return Response.accepted().build();
-      return null;
+        evalService.saveMany(evals);
+        return Response.accepted().build();
+
   }
 
 
@@ -178,7 +178,7 @@ public class EvalEndpoint extends BaseAuditEndpoint {
   @Path("/{jobId}")
   @Operation(
     summary = "Delete all eval metrics data of a certain jobId, or metadata",
-    description = "Deletes a specific analysis job metadata by Internal DB id")
+    description = "Deletes a specific analysis job metadata by jobId and optional traceId")
   @APIResponses({
     @APIResponse(
       responseCode = "202",

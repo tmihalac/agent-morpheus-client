@@ -18,7 +18,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Singleton
 @RegisterForReflection(targets = { Document.class })

@@ -7,6 +7,7 @@ import com.redhat.ecosystemappeng.morpheus.repository.EvalRepositoryService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotEmpty;
+import org.jboss.logging.Logger;
 
 import java.util.List;
 import java.util.Objects;
@@ -18,6 +19,7 @@ import static com.redhat.ecosystemappeng.morpheus.service.audit.AuditService.THR
 @ApplicationScoped
 public class EvalService {
 
+    private static final Logger LOGGER = Logger.getLogger(EvalService.class);
     @Inject
     EvalRepositoryService repository;
 
@@ -54,7 +56,13 @@ public class EvalService {
 //        Get all evals from DB if jobId not supplied, regardless of traceId value.
         else {
             List<String> evals = repository.findAll();
-            return transformEvalsJsonsToPojos(evals, false);
+            if(Objects.nonNull(evals) && !evals.isEmpty()) {
+                return transformEvalsJsonsToPojos(evals, false);
+            }
+            else {
+                return List.of();
+            }
+
         }
     }
 
@@ -63,7 +71,7 @@ public class EvalService {
             return allEvals.parallelStream().map(deserializeEval()).collect(Collectors.toList());
         }
         else {
-            return allEvals.stream().map(deserializeEval()).collect(Collectors.toList());
+            return allEvals.stream().filter(Objects::nonNull).map(deserializeEval()).collect(Collectors.toList());
         }
 
     }
@@ -79,5 +87,10 @@ public class EvalService {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void saveMany(List<Eval> evals) {
+        LOGGER.debugf("Saving list of Evals documents =>  %s", evals.stream().map(Eval::toString).collect(Collectors.joining(", ")));
+        repository.saveMany(evals);
     }
 }
