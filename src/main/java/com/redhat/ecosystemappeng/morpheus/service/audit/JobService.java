@@ -2,18 +2,23 @@ package com.redhat.ecosystemappeng.morpheus.service.audit;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.ecosystemappeng.morpheus.model.audit.Batch;
 import com.redhat.ecosystemappeng.morpheus.model.audit.Job;
 import com.redhat.ecosystemappeng.morpheus.repository.JobRepositoryService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static com.redhat.ecosystemappeng.morpheus.rest.audit.BaseAuditEndpoint.UNPROCESSABLE_ENTITY_HTTP_ERROR;
 
 @ApplicationScoped
 public class JobService extends AuditService {
@@ -23,12 +28,23 @@ public class JobService extends AuditService {
    @Inject
   JobRepositoryService repository;
 
+   @Inject
+  BatchService batchService;
+
+
   @Inject
   ObjectMapper mapper;
 
   public void save(Job job)  {
     LOGGER.debugf("Saving Job %s", job.getJobId());
       try {
+          if (Objects.nonNull(job.getBatchId()) && !job.getBatchId().isEmpty()) {
+              try {
+                  batchService.getByBatchId(job.getBatchId());
+              } catch (NotFoundException e) {
+                  throw new WebApplicationException("Cannot save job object to DB, as batchId=" + job.getBatchId() + ", of jobId=" + job.getJobId() + " doesn't exists in Batches DB", Response.status(UNPROCESSABLE_ENTITY_HTTP_ERROR).build());
+              }
+          }
           String jobJSON = mapper.writeValueAsString(job);
           LOGGER.debugf("job payload to be written to DB: %s %s", System.lineSeparator() ,mapper.writerWithDefaultPrettyPrinter().writeValueAsString(job));
           repository.save(jobJSON);
@@ -39,6 +55,13 @@ public class JobService extends AuditService {
 
   public void saveMany(List<Job> jobs) {
       LOGGER.debugf("Saving list of Jobs ids =>  %s", jobs.stream().map(Job::getJobId).collect(Collectors.joining(", ")));
+      Set<String> allBatchesInDB = batchService.getAllBatches().stream().map(Batch::getBatchId).collect(Collectors.toSet());
+// Validation to ensure that all jobs that are associated with a batchId, are associated with a batchId that exists in DB.
+      jobs.stream().filter(job -> Objects.nonNull(job.getBatchId())).filter(job -> !job.getBatchId().isEmpty()).forEach( job -> {
+          if (!allBatchesInDB.contains(job.getBatchId())) {
+              throw new WebApplicationException("Cannot save job objects To DB, as batchId=" +job.getBatchId() + ", of jobId=" + job.getJobId() + " doesn't exists in Batches DB", Response.status(UNPROCESSABLE_ENTITY_HTTP_ERROR).build());
+          }
+      });
       repository.saveMany(jobs);
   }
   

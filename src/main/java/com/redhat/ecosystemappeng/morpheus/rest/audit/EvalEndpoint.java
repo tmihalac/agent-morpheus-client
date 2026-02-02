@@ -52,6 +52,11 @@ public class EvalEndpoint extends BaseAuditEndpoint {
       responseCode = "400", 
       description = "Invalid request data in request body - validation error"
     ),
+
+    @APIResponse(
+      responseCode = "422",
+      description = "Evals objects are unprocessable - Cannot insert Evals objects to DB due to existence of at least one jobId that doesn't exists in DB"
+    ),
     @APIResponse(
       responseCode = "500", 
       description = "Internal server error"

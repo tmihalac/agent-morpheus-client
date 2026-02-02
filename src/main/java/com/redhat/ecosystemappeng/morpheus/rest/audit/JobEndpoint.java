@@ -56,6 +56,10 @@ public class JobEndpoint extends BaseAuditEndpoint {
       description = "Invalid request data in request body - validation error"
     ),
     @APIResponse(
+          responseCode = "422",
+          description = "Jobs objects are unprocessable - Cannot insert Job objects to DB due to existence of at least one batchId of a single job object that doesn't exists in batches DB"
+    ),
+    @APIResponse(
       responseCode = "500", 
       description = "Internal server error"
     )
@@ -89,6 +93,10 @@ public class JobEndpoint extends BaseAuditEndpoint {
     @APIResponse(
       responseCode = "400",
       description = "Invalid request data in request body - validation error"
+    ),
+    @APIResponse(
+          responseCode = "422",
+          description = "Job object is unprocessable - Cannot insert Job object to DB due to the fact that related batchId doesn't exists in DB"
     ),
     @APIResponse(
       responseCode = "500",

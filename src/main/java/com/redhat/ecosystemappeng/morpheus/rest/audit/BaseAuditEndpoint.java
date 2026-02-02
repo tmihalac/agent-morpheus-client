@@ -52,7 +52,7 @@ public class BaseAuditEndpoint {
 
     @ServerExceptionMapper
     public Response mapUnprocessableEntity(WebApplicationException ex) {
-        LOGGER.error("Cannot update list of resources because reference key is not in DB details => ", ex);
+        LOGGER.error("Cannot insert list of resources because reference key is not in DB details => ", ex);
         if(ex.getResponse().getStatusInfo().getStatusCode() == UNPROCESSABLE_ENTITY_HTTP_ERROR) {
             return Response.status(UNPROCESSABLE_ENTITY_HTTP_ERROR).entity("Referenced resource not found, thus cannot insert documents to DB, details=> " + ex.getMessage()).type(MediaType.TEXT_PLAIN).build();
 

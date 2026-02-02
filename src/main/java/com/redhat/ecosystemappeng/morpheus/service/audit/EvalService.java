@@ -18,6 +18,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.redhat.ecosystemappeng.morpheus.rest.audit.BaseAuditEndpoint.UNPROCESSABLE_ENTITY_HTTP_ERROR;
 import static com.redhat.ecosystemappeng.morpheus.service.audit.AuditService.THRESHOLD_NUMBER_OF_DB_ITEMS_FOR_PARALLEL_PROCESSING;
 
 @ApplicationScoped
@@ -104,7 +105,7 @@ public class EvalService {
         for  (String jobId : listOfEvalsJobs) {
             int searchIndexFound = Collections.binarySearch(JobsIdsInDB, jobId);
             if (searchIndexFound < 0) {
-                throw new WebApplicationException("Cannot save list of evals objects, as jobId=" + jobId + " doesn't exists in Jobs DB", Response.status(422).build());
+                throw new WebApplicationException("Cannot save list of evals objects, as jobId=" + jobId + " doesn't exists in Jobs DB", Response.status(UNPROCESSABLE_ENTITY_HTTP_ERROR).build());
 
             }
         }
