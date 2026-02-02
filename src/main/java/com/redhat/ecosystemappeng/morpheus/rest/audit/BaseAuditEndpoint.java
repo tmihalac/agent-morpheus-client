@@ -2,6 +2,7 @@ package com.redhat.ecosystemappeng.morpheus.rest.audit;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
@@ -15,8 +16,10 @@ import org.jboss.resteasy.reactive.server.jaxrs.RestResponseBuilderImpl;
 @UnwrapException({RuntimeException.class})
 public class BaseAuditEndpoint {
 
-  private static final Logger LOGGER = Logger.getLogger(BaseAuditEndpoint.class);
-  @ServerExceptionMapper
+    private static final Logger LOGGER = Logger.getLogger(BaseAuditEndpoint.class);
+    public static final int UNPROCESSABLE_ENTITY_HTTP_ERROR = 422;
+
+    @ServerExceptionMapper
 
   public RestResponse<String> mapValidation(ValidationException ex) {
       LOGGER.error("Input validation of request failed, details => " , ex);
@@ -47,8 +50,23 @@ public class BaseAuditEndpoint {
                                             "General Error encountered, Contact admin").type(MediaType.TEXT_PLAIN).build();
    }
 
+    @ServerExceptionMapper
+    public Response mapUnprocessableEntity(WebApplicationException ex) {
+        LOGGER.error("Cannot update list of resources because reference key is not in DB details => ", ex);
+        if(ex.getResponse().getStatusInfo().getStatusCode() == UNPROCESSABLE_ENTITY_HTTP_ERROR) {
+            return Response.status(UNPROCESSABLE_ENTITY_HTTP_ERROR).entity("Referenced resource not found, thus cannot insert documents to DB, details=> " + ex.getMessage()).type(MediaType.TEXT_PLAIN).build();
+
+        }
+        else {
+            try (RestResponse<String> stringRestResponse = mapGeneralException(ex)) {
+                return stringRestResponse.toResponse();
+            }
+
+        }
+    }
+
   @ServerExceptionMapper
-  public RestResponse<String> mapGeneral(Exception ex) {
+  public RestResponse<String> mapGeneralException(Exception ex) {
       LOGGER.error("General unexpected error encountered during API request, details:",  ex);
 
       return RestResponseBuilderImpl.create(RestResponse.Status.INTERNAL_SERVER_ERROR,"Unexpected General Error encountered, Contact admin").type(MediaType.TEXT_PLAIN).build();

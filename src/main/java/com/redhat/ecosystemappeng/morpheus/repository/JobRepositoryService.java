@@ -5,6 +5,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Indexes;
+import com.mongodb.client.model.Sorts;
 import com.redhat.ecosystemappeng.morpheus.model.audit.Job;
 import com.redhat.ecosystemappeng.morpheus.service.audit.JobService;
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -81,7 +82,7 @@ public class JobRepositoryService extends AuditRepository {
 
     public List<String> findAll() {
         List<Document> docs = new ArrayList<>();
-        getJobsCollection().find().into(docs);
+        getJobsCollection().find().sort(Sorts.ascending(JOB_ID_FIELD_NAME)).into(docs);
         if (docs.isEmpty()) {
             return null;
         }

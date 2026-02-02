@@ -41,11 +41,11 @@ public class EvalEndpoint extends BaseAuditEndpoint {
 
   @POST
   @Operation(
-    summary = "Create List of new jobs containing metadata of executions of analysis",
+    summary = "Create List of new evals metrics data of certain stages in certain analysis job runs ",
     description = "Creates multiple jobs containing audit metadata about analysis runs")
   @APIResponses({
     @APIResponse(
-      responseCode = "201",
+      responseCode = "202",
       description = "jobs creation accepted"
     ),
     @APIResponse(

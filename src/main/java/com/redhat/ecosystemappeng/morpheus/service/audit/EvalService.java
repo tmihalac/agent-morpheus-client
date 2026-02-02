@@ -3,12 +3,16 @@ package com.redhat.ecosystemappeng.morpheus.service.audit;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.ecosystemappeng.morpheus.model.audit.Eval;
+import com.redhat.ecosystemappeng.morpheus.model.audit.Job;
 import com.redhat.ecosystemappeng.morpheus.repository.EvalRepositoryService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -22,6 +26,9 @@ public class EvalService {
     private static final Logger LOGGER = Logger.getLogger(EvalService.class);
     @Inject
     EvalRepositoryService repository;
+
+    @Inject
+    JobService jobService;
 
     @Inject
     ObjectMapper mapper;
@@ -91,6 +98,16 @@ public class EvalService {
 
     public void saveMany(List<Eval> evals) {
         LOGGER.debugf("Saving list of Evals documents =>  %s", evals.stream().map(Eval::toString).collect(Collectors.joining(", ")));
+        List<Job> jobsInDb = jobService.getAllJobs();
+        List<String> JobsIdsInDB = jobsInDb.stream().map(Job::getJobId).toList();
+        List<String> listOfEvalsJobs = evals.stream().map(Eval::getJobId).toList();
+        for  (String jobId : listOfEvalsJobs) {
+            int searchIndexFound = Collections.binarySearch(JobsIdsInDB, jobId);
+            if (searchIndexFound < 0) {
+                throw new WebApplicationException("Cannot save list of evals objects, as jobId=" + jobId + " doesn't exists in Jobs DB", Response.status(422).build());
+
+            }
+        }
         repository.saveMany(evals);
     }
 }

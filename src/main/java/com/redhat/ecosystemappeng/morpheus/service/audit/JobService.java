@@ -9,6 +9,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import org.jboss.logging.Logger;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -72,8 +73,11 @@ public class JobService extends AuditService {
       if (Objects.nonNull(allJobs)) {
           return transformJobsJsonsToPojos(allJobs);
       }
-      else{
+      else if (this.apiBlankListResultReturnsError){
           throw new NotFoundException("There are no jobs in the database");
+      }
+      else {
+          return Collections.emptyList();
       }
 
   }
