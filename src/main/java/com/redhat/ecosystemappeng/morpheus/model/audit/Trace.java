@@ -12,23 +12,27 @@ import java.util.Map;
 
 import static com.redhat.ecosystemappeng.morpheus.repository.JobRepositoryService.*;
 
-
 @RegisterForReflection
 public class Trace {
+    @JsonProperty( value = "format_version" , access = JsonProperty.Access.READ_ONLY)
+    private Integer formatVersion = 1;
     @JsonProperty(JOB_ID_FIELD_NAME)
     @NotEmpty
+    @Schema(description = "The job run id in which the trace and spans were instrumented")
     private String jobId;
     @PastOrPresent
     @JsonProperty(EXECUTION_START_TIMESTAMP)
     private LocalDateTime executionTimestamp;
     @NotEmpty
     @JsonProperty(TRACE_ID_FIELD_NAME)
+    @Schema(description = "The id corresponding to one agent stage, grouping underneath all spans of sub-tasks embedded in the agent stage")
     private String traceId;
     @NotEmpty
     @JsonProperty(SPAN_ID_FIELD_NAME)
+    @Schema(description = "The id corresponding to one sub task inside one agent stage.")
     private String spanId;
     @JsonAnySetter
-    @Schema(description = "free style span payload without restrictions")
+    @Schema(description = "free style span payload without restrictions, containing all span metadata and istrumentation data")
     @JsonProperty("span_payload")
     private Map<String, Object> spanPayload;
 
@@ -71,5 +75,19 @@ public class Trace {
 
     public void setSpanPayload(Map<String, Object> spanPayload) {
         this.spanPayload = spanPayload;
+    }
+    public Integer getFormatVersion() {
+        return formatVersion;
+    }
+
+    @Override
+    public String toString() {
+        return "Trace{" +
+                "formatVersion=" + formatVersion +
+                ", jobId='" + jobId + '\'' +
+                ", traceId='" + traceId + '\'' +
+                ", executionTimestamp=" + executionTimestamp +
+                ", spanId='" + spanId + '\'' +
+                '}';
     }
 }

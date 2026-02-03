@@ -12,6 +12,7 @@ public class AuditRepository {
 //    Names of all fields in MongoDB Audit Collections
     public static final String JOBS_COLLECTION = "jobs";
     public static final String EVALS_COLLECTION = "evals";
+    public static final String TRACES_COLLECTION = "traces";
     public static final String BATCHES_COLLECTION = "batches";
     public static final String BATCH_TYPE_FIELD_NAME = "batch_type";
     public static final String LANGUAGE_FIELD_NAME = "app_language";

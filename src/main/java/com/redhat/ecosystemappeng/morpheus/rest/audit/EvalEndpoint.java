@@ -20,6 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 
 import java.util.List;
@@ -30,6 +31,7 @@ import static com.redhat.ecosystemappeng.morpheus.service.audit.AuditService.REG
 @SecurityScheme(securitySchemeName = "jwt", type = SecuritySchemeType.HTTP, scheme = "bearer", bearerFormat = "jwt", description = "Please enter your JWT Token without Bearer")
 @SecurityRequirement(name = "jwt")
 @Path("/evals")
+@Tag(name = "ML-OPS Audit 4 - Eval Resource", description = "resource related to ML-OPS audit curated evaluation metrics recorded scores of a job run' LLM Stages with its respective operations")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class EvalEndpoint extends BaseAuditEndpoint {

@@ -35,7 +35,7 @@ public class Eval {
     private LLMStage llmNode;
     @JsonProperty(METRIC_NAME_FIELD_NAME)
     @NotEmpty
-    private String metricName;
+    private MetricName metricName;
     @NotEmpty
     @JsonProperty(METRIC_VALUE_FIELD_NAME)
     private String metricValue;
@@ -81,11 +81,11 @@ public class Eval {
         this.componentVersion = componentVersion;
     }
 
-    public String getMetricName() {
+    public MetricName getMetricName() {
         return metricName;
     }
 
-    public void setMetricName(String metricName) {
+    public void setMetricName(MetricName metricName) {
         this.metricName = metricName;
     }
 
