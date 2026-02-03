@@ -27,25 +27,36 @@ public class UserService {
     return new UserInfo(json);
   }
 
+  /**
+   * Resolves the best available username from UserInfo claims.
+   *
+   * Checks explicitly for: email, upn, metadata.name, preferred_username, sub.
+   * Falls back to "anonymous" if UserInfo is missing.
+   */
   public String getUserName() {
     if (Objects.nonNull(userInfo)) {
-      // Try email first
       var name = userInfo.getString("email");
       if (Objects.nonNull(name)) {
         return name;
       }
-      // Fallback to upn
       name = userInfo.getString("upn");
       if (Objects.nonNull(name)) {
         return name;
       }
-      // Fallback to metadata.name
       var metadata = userInfo.getObject("metadata");
       if (Objects.nonNull(metadata)) {
         name = metadata.getString("name");
         if (Objects.nonNull(name)) {
           return name;
         }
+      }
+      name = userInfo.getString("preferred_username");
+      if (Objects.nonNull(name)) {
+        return name;
+      }
+      name = userInfo.getString("sub");
+      if (Objects.nonNull(name)) {
+        return name;
       }
     }
     return DEFAULT_USERNAME;
