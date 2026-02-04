@@ -91,16 +91,18 @@ public class TraceService {
         }
     }
 
-    public void saveMany(List<Trace> traces) {
+    public void saveMany(List<Trace> traces, boolean skipReferentialIntegrity) {
         LOGGER.debugf("Saving list of Traces documents =>  %s", traces.stream().map(Trace::toString).collect(Collectors.joining(", ")));
-        List<Job> jobsInDb = jobService.getAllJobs();
-        List<String> JobsIdsInDB = jobsInDb.stream().map(Job::getJobId).toList();
-        List<String> listOfTracesJobs = traces.stream().map(Trace::getJobId).toList();
-        for  (String jobId : listOfTracesJobs) {
-            int searchIndexFound = Collections.binarySearch(JobsIdsInDB, jobId);
-            if (searchIndexFound < 0) {
-                throw new WebApplicationException("Cannot save list of traces objects, as jobId=" + jobId + " doesn't exists in Jobs DB", Response.status(UNPROCESSABLE_ENTITY_HTTP_ERROR).build());
+        if (!skipReferentialIntegrity) {
+            List<Job> jobsInDb = jobService.getAllJobs();
+            List<String> JobsIdsInDB = jobsInDb.stream().map(Job::getJobId).toList();
+            List<String> listOfTracesJobs = traces.stream().map(Trace::getJobId).toList();
+            for  (String jobId : listOfTracesJobs) {
+                int searchIndexFound = Collections.binarySearch(JobsIdsInDB, jobId);
+                if (searchIndexFound < 0) {
+                    throw new WebApplicationException("Cannot save list of traces objects, as jobId=" + jobId + " doesn't exists in Jobs DB", Response.status(UNPROCESSABLE_ENTITY_HTTP_ERROR).build());
 
+                }
             }
         }
         repository.saveMany(traces);

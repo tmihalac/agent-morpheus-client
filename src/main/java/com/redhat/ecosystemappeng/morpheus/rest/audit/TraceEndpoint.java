@@ -2,9 +2,11 @@ package com.redhat.ecosystemappeng.morpheus.rest.audit;
 
 import com.redhat.ecosystemappeng.morpheus.model.audit.Trace;
 import com.redhat.ecosystemappeng.morpheus.service.audit.TraceService;
+import io.vertx.core.cli.annotations.Hidden;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Pattern;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -21,6 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.RestHeader;
 
 import java.util.List;
 
@@ -73,9 +76,10 @@ public class TraceEndpoint extends BaseAuditEndpoint {
       description = "span data of a certain unit of work/function inside a LLM Stage of single job Analysis run",
       required = true)
     @Valid
-     List<Trace> traces) {
-
-        traceService.saveMany(traces);
+     List<Trace> traces,
+     @RestHeader("Bypass-Referential-Integrity-Check") String bypassReferentialIntegrityCheck) {
+      boolean skipReferentialIntegrity = Boolean.parseBoolean(bypassReferentialIntegrityCheck);
+      traceService.saveMany(traces, skipReferentialIntegrity);
         return Response.accepted().build();
 
   }

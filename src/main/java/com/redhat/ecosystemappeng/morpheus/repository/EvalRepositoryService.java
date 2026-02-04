@@ -34,10 +34,11 @@ public class EvalRepositoryService extends AuditRepository {
     }
 
     public void removeAllEvalsOfJob(@NotEmpty String jobId) {
+        getEvalsCollection().deleteMany(Filters.eq(JOB_ID_FIELD_NAME, jobId));
     }
 
     public void removeAllEvalsOfJobAndTrace(@NotEmpty String jobId, String traceId) {
-        
+        getEvalsCollection().deleteMany(Filters.and(Filters.eq(JOB_ID_FIELD_NAME, jobId), Filters.eq(TRACE_ID_FIELD_NAME, traceId)));
     }
 
     public List<String> findAll() {

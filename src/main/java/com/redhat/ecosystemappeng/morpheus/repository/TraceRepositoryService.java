@@ -33,11 +33,11 @@ public class TraceRepositoryService extends AuditRepository {
     }
 
     public void removeAllTracesOfJob(@NotEmpty String jobId) {
-        getTracesCollection().deleteMany(Filters.eq("jobId", jobId));
+        getTracesCollection().deleteMany(Filters.eq(JOB_ID_FIELD_NAME, jobId));
     }
 
     public void removeAllTracesOfJobAndTrace(@NotEmpty String jobId, String traceId) {
-        
+        getTracesCollection().deleteMany(Filters.and(Filters.eq(JOB_ID_FIELD_NAME, jobId), Filters.eq(TRACE_ID_FIELD_NAME, traceId)));
     }
 
     public List<String> findAll() {
