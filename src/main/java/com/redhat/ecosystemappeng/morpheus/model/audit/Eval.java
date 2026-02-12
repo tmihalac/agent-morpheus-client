@@ -34,7 +34,6 @@ public class Eval {
     @JsonProperty(LLM_NODE_FIELD_NAME)
     private LLMStage llmNode;
     @JsonProperty(METRIC_NAME_FIELD_NAME)
-    @NotEmpty
     private MetricName metricName;
     @NotEmpty
     @JsonProperty(METRIC_VALUE_FIELD_NAME)
