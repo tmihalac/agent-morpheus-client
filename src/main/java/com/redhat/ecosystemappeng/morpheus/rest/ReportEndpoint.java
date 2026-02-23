@@ -20,7 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
-
+import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,11 +28,12 @@ import com.redhat.ecosystemappeng.morpheus.model.ReportData;
 import com.redhat.ecosystemappeng.morpheus.model.ReportRequest;
 import com.redhat.ecosystemappeng.morpheus.model.SortField;
 import com.redhat.ecosystemappeng.morpheus.service.PreProcessingService;
+import com.redhat.ecosystemappeng.morpheus.service.ProductService;
 import com.redhat.ecosystemappeng.morpheus.service.ReportService;
 import com.redhat.ecosystemappeng.morpheus.service.RequestQueueExceededException;
-import com.redhat.ecosystemappeng.morpheus.service.ProductService;
 import com.redhat.ecosystemappeng.morpheus.model.Report;
 import com.redhat.ecosystemappeng.morpheus.model.ReportRequestId;
+import com.redhat.ecosystemappeng.morpheus.model.ReportWithStatus;
 import com.redhat.ecosystemappeng.morpheus.model.ProductSummary;
 
 import jakarta.inject.Inject;
@@ -245,6 +246,7 @@ public class ReportEndpoint {
     return Response.accepted(reqId).build();
   }
 
+
   @GET
   @Operation(
     summary = "List analysis reports", 
@@ -275,10 +277,44 @@ public class ReportEndpoint {
       @Parameter(
         description = "Number of items per page"
       )
-      @QueryParam(PAGE_SIZE) @DefaultValue("100") Integer pageSize) {
+      @QueryParam(PAGE_SIZE) @DefaultValue("100") Integer pageSize,
+      @Parameter(
+        description = "Filter by report ID (input.scan.id)"
+      )
+      @QueryParam("reportId") String reportId,
+      @Parameter(
+        description = "Filter by vulnerability ID (CVE ID)"
+      )
+      @QueryParam("vulnId") String vulnId,
+      @Parameter(
+        description = "Filter by status. Valid values: completed, sent, failed, queued, expired, pending"
+      )
+      @QueryParam("status") String status,
+      @Parameter(
+        description = "Filter by image name"
+      )
+      @QueryParam("imageName") String imageName,
+      @Parameter(
+        description = "Filter by image tag"
+      )
+      @QueryParam("imageTag") String imageTag,
+      @Parameter(
+        description = "Filter by SBOM report ID (metadata.product_id)"
+      )
+      @QueryParam("productId") String productId,
+      @Parameter(
+        description = "Filter by ExploitIQ status. Valid values: TRUE, FALSE, UNKNOWN"
+      )
+      @QueryParam("exploitIqStatus") String exploitIqStatus) {
 
-    var filter = uriInfo.getQueryParameters().entrySet().stream().filter(e -> !FIXED_QUERY_PARAMS.contains(e.getKey()))
-        .collect(Collectors.toMap(Entry::getKey, e -> e.getValue().getFirst()));
+    var filter = uriInfo.getQueryParameters().entrySet().stream()
+        .filter(e -> !FIXED_QUERY_PARAMS.contains(e.getKey()))
+        .collect(Collectors.toMap(
+            Entry::getKey,
+            e -> e.getValue().size() > 1 
+              ? String.join(",", e.getValue()) 
+              : e.getValue().getFirst()
+        ));
     var result = reportService.list(filter, SortField.fromSortBy(sortBy), page, pageSize);
     return Response.ok(result.results)
         .header("X-Total-Pages", result.totalPages)
@@ -286,36 +322,18 @@ public class ReportEndpoint {
         .build();
   }
 
+
   @GET
   @Path("/{id}")
   @Operation(
     summary = "Get analysis report", 
-    description = "Retrieves a specific analysis report by ID")
+    description = "Retrieves a specific analysis report by ID with calculated analysis status")
   @APIResponses({
     @APIResponse(
       responseCode = "200", 
       description = "Report retrieved successfully",
       content = @Content(
-        schema = @Schema(
-          type = SchemaType.STRING, 
-          example = """
-        {
-          "input": {
-            "scan": {...
-            },
-            "image": {...
-            }
-          },
-          "output": {
-            "analysis": [...],
-            "vex": null | {...}
-          },
-          "info": {...
-          },
-          "metadata": {...
-          }
-        }
-        """)
+        schema = @Schema(implementation = ReportWithStatus.class)
       )
     ),
     @APIResponse(
@@ -327,17 +345,17 @@ public class ReportEndpoint {
       description = "Internal server error"
     )
   })
-  public String get(
+  public ReportWithStatus get(
     @Parameter(
       description = "Report ID to get (24-character hexadecimal MongoDB ObjectId format)", 
       required = true
     )
     @PathParam("id") String id) throws InterruptedException {
-    var report = reportService.get(id);
-    if (Objects.isNull(report)) {
+    var reportWithStatus = reportService.getWithStatus(id);
+    if (Objects.isNull(reportWithStatus)) {
       throw new NotFoundException(id);
     }
-    return report;
+    return reportWithStatus;
   }
 
   @GET
@@ -364,15 +382,26 @@ public class ReportEndpoint {
       required = true
     )
     @PathParam("id") String id) throws InterruptedException {
-    var result = reportService.getProductSummary(id);
-    return Response.ok(result).build();
+    try {
+      var result = reportService.getProductSummary(id);
+      if (Objects.isNull(result) || Objects.isNull(result.data())) {
+        return Response.status(Response.Status.NOT_FOUND).build();
+      }
+      return Response.ok(result).build();
+    } catch (Exception e) {
+      LOGGER.error("Unable to retrieve product", e);
+      return Response.serverError()
+          .entity(objectMapper.createObjectNode()
+              .put("error", e.getMessage()))
+          .build();
+    }
   }
 
   @GET
   @Path("/product")
   @Operation(
     summary = "List all product data", 
-    description = "Retrieves product data for all products")
+    description = "Retrieves paginated, sortable, and filterable product data for all products")
   @APIResponses({
     @APIResponse(
       responseCode = "200", 
@@ -386,9 +415,30 @@ public class ReportEndpoint {
       description = "Internal server error"
     )
   })
-  public Response listProducts() {
-    var result = reportService.listProductSummaries();
-    return Response.ok(result).build();
+  public Response listProducts(
+      @QueryParam("page") @DefaultValue("0") Integer page,
+      @QueryParam("pageSize") @DefaultValue("100") Integer pageSize,
+      @QueryParam("sortField") @DefaultValue("submittedAt") String sortField,
+      @QueryParam("sortDirection") @DefaultValue("DESC") String sortDirection,
+      @QueryParam("name") String name,
+      @QueryParam("cveId") String cveId) {
+    try {
+      var result = reportService.listProductSummaries(page, pageSize, sortField, sortDirection, name, cveId);
+      
+      // Calculate total pages
+      long totalPages = (result.totalCount() + pageSize - 1) / pageSize;
+      
+      return Response.ok(result.summaries())
+          .header("X-Total-Pages", String.valueOf(totalPages))
+          .header("X-Total-Elements", String.valueOf(result.totalCount()))
+          .build();
+    } catch (Exception e) {
+      LOGGER.error("Unable to retrieve products", e);
+      return Response.serverError()
+          .entity(objectMapper.createObjectNode()
+              .put("error", e.getMessage()))
+          .build();
+    }
   }
 
   @POST
@@ -432,8 +482,8 @@ public class ReportEndpoint {
     @PathParam("id") String id) {
     preProcessingService.confirmResponse(id);
     
-    String report = reportService.get(id); 
-    if (Objects.isNull(report)) {
+    var reportJson = reportService.get(id); 
+    if (Objects.isNull(reportJson)) {
       preProcessingService.handleError(id, "report-not-found-error", "No report exists for ID " + id + " for submission.");
 
       return Response.status(Response.Status.NOT_FOUND)
@@ -443,8 +493,8 @@ public class ReportEndpoint {
     }
     
     try {
-      JsonNode reportJson = objectMapper.readTree(report);
-      reportService.submit(id, reportJson);
+      JsonNode reportJsonNode = objectMapper.readTree(reportJson);
+      reportService.submit(id, reportJsonNode);
 
       return Response.accepted(id).build();
     } catch (IllegalArgumentException e) {
@@ -635,5 +685,14 @@ public class ReportEndpoint {
     reportService.remove(reportIds);
     productService.remove(id);
     return Response.accepted().build();
+  }
+
+  @ServerExceptionMapper
+  public Response mapException(Exception e) {
+    LOGGER.error("Unexpected error in ReportEndpoint", e);
+    return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+        .entity(objectMapper.createObjectNode()
+            .put("error", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred"))
+        .build();
   }
 }

@@ -11,4 +11,6 @@ public record ProductSummary(
     Product data,
     @Schema(required = true, description = "Product reports summary data", type = SchemaType.OBJECT, implementation = ProductReportsSummary.class)
     ProductReportsSummary summary
-) {} 
+) {}
+
+

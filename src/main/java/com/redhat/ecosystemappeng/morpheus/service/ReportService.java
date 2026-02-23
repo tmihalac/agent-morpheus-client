@@ -31,21 +31,24 @@ import com.redhat.ecosystemappeng.morpheus.client.GitHubService;
 import com.redhat.ecosystemappeng.morpheus.config.AppConfig;
 import com.redhat.ecosystemappeng.morpheus.model.PaginatedResult;
 import com.redhat.ecosystemappeng.morpheus.model.Pagination;
+import com.redhat.ecosystemappeng.morpheus.model.Product;
+import com.redhat.ecosystemappeng.morpheus.model.ProductReportsSummary;
+import com.redhat.ecosystemappeng.morpheus.model.ProductSummary;
 import com.redhat.ecosystemappeng.morpheus.model.Report;
 import com.redhat.ecosystemappeng.morpheus.model.ReportData;
 import com.redhat.ecosystemappeng.morpheus.model.ReportReceivedEvent;
 import com.redhat.ecosystemappeng.morpheus.model.ReportRequest;
 import com.redhat.ecosystemappeng.morpheus.model.ReportRequestId;
+import com.redhat.ecosystemappeng.morpheus.model.ReportWithStatus;
 import com.redhat.ecosystemappeng.morpheus.model.SortField;
+import com.redhat.ecosystemappeng.morpheus.repository.ProductRepositoryService;
+import com.redhat.ecosystemappeng.morpheus.repository.ReportRepositoryService;
+import com.redhat.ecosystemappeng.morpheus.exception.ValidationException;
 import com.redhat.ecosystemappeng.morpheus.model.morpheus.Image;
 import com.redhat.ecosystemappeng.morpheus.model.morpheus.ReportInput;
 import com.redhat.ecosystemappeng.morpheus.model.morpheus.Scan;
 import com.redhat.ecosystemappeng.morpheus.model.morpheus.SourceInfo;
 import com.redhat.ecosystemappeng.morpheus.model.morpheus.VulnId;
-import com.redhat.ecosystemappeng.morpheus.model.ProductReportsSummary;
-import com.redhat.ecosystemappeng.morpheus.model.Product;
-import com.redhat.ecosystemappeng.morpheus.model.ProductSummary;
-
 
 import com.redhat.ecosystemappeng.morpheus.rest.NotificationSocket;
 
@@ -80,6 +83,9 @@ public class ReportService {
 
   @Inject
   RequestQueueService queueService;
+
+  @Inject
+  ProductRepositoryService productRepository;
 
   @ConfigProperty(name = "morpheus-ui.includes.path", defaultValue = "includes.json")
   String includesPath;
@@ -138,14 +144,21 @@ public class ReportService {
       Integer pageSize) {
     return repository.list(filter, sortBy, new Pagination(page, pageSize));
   }
+  public record ProductSummariesResult(List<ProductSummary> summaries, long totalCount) {
+  }
 
-  public List<ProductSummary> listProductSummaries() {
+  public ProductSummariesResult listProductSummaries(Integer page, Integer pageSize, String sortField, String sortDirection, String name, String cveId) {
+    // Get paginated products from repository
+    ProductRepositoryService.ListResult listResult = productRepository.list(page, pageSize, sortField, sortDirection, name, cveId);
+    
+    // Build ProductSummary for each product
     List<ProductSummary> summaries = new ArrayList<>();
-    List<String> productIds = repository.getProductIds();
-    for (String productId : productIds) {
-      summaries.add(getProductSummary(productId));
+    for (Product product : listResult.products()) {
+      ProductReportsSummary productReportsSummary = repository.getProductSummaryData(product.id());
+      summaries.add(new ProductSummary(product, productReportsSummary));
     }
-    return summaries;
+    
+    return new ProductSummariesResult(summaries, listResult.totalCount());
   }
 
   public ProductSummary getProductSummary(String productId) {
@@ -169,6 +182,28 @@ public class ReportService {
   public String get(String id) {
     LOGGER.debugf("Get report %s", id);
     return repository.findById(id);
+  }
+
+  public ReportWithStatus getWithStatus(String id) {
+    LOGGER.debugf("Get report with status %s", id);
+    var reportJson = repository.findById(id);
+    if (reportJson == null) {
+      return null;
+    }
+    try {
+      // Parse JSON once for both report and status calculation
+      var reportNode = objectMapper.readTree(reportJson);
+      var document = org.bson.Document.parse(reportJson);
+      var metadata = repository.extractMetadata(document);
+      var status = repository.getStatus(document, metadata);
+      return new ReportWithStatus(reportNode, status);
+    } catch (JsonProcessingException e) {
+      LOGGER.errorf("Error parsing report JSON for id %s: %s", id, e.getMessage());
+      throw new RuntimeException("Failed to parse report JSON", e);
+    } catch (Exception e) {
+      LOGGER.errorf("Error processing report for id %s: %s", id, e.getMessage());
+      throw new RuntimeException("Failed to process report", e);
+    }
   }
 
   public boolean remove(String id) {
@@ -321,7 +356,10 @@ public class ReportService {
       name = getProperty(component, "name");
       tag = getProperty(component, "version");
       var properties = new HashMap<String, String>();
-      metadata.get("properties").forEach(p -> properties.put(getProperty(p, "name"), getProperty(p, "value")));
+      var metadataProperties = metadata.get("properties");
+      if (Objects.nonNull(metadataProperties) && metadataProperties.isArray()) {
+        metadataProperties.forEach(p -> properties.put(getProperty(p, "name"), getProperty(p, "value")));
+      }
       if(Objects.nonNull(request.metadata())) {
         properties.putAll(request.metadata());
       }
@@ -369,8 +407,8 @@ public class ReportService {
         .map(properties::get)
         .filter(Objects::nonNull)
         .findFirst()
-        .orElseThrow(() -> new IllegalArgumentException(
-            "SBOM is missing required field. Checked keys: " + appConfig.image().source().locationKeys()));
+        .orElseThrow(() -> new ValidationException(
+            Map.of("file", "SBOM is missing required field. Checked keys: " + appConfig.image().source().locationKeys())));
   }
 
 
@@ -380,8 +418,8 @@ public class ReportService {
         .map(properties::get)
         .filter(Objects::nonNull)
         .findFirst()
-        .orElseThrow(() -> new IllegalArgumentException(
-            "SBOM is missing required field. Checked keys: " + appConfig.image().source().commitIdKeys()));
+        .orElseThrow(() -> new ValidationException(
+            Map.of("file", "SBOM is missing required field. Checked keys: " + appConfig.image().source().commitIdKeys())));
   }
 
   private JsonNode buildSbomInfo(ReportRequest request) {
