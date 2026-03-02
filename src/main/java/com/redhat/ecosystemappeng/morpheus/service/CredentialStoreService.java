@@ -16,8 +16,8 @@ import org.jboss.logging.Logger;
 import com.redhat.ecosystemappeng.morpheus.model.CredentialType;
 import com.redhat.ecosystemappeng.morpheus.model.InlineCredential;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.quarkus.scheduler.Scheduled;
-import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.NotFoundException;
 
@@ -33,25 +33,22 @@ public class CredentialStoreService {
     private static final String AES_ALGORITHM_GCM = "AES/GCM/NoPadding";
     private static final int GCM_IV_LENGTH = 12;
     private static final int GCM_TAG_LENGTH = 128;
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-    @ConfigProperty(name = "morpheus.queue.timeout")
-    private Duration credentialTTL;
-
-    @ConfigProperty(name = "morpheus.credential-store.encryption-key")
-    private String encryptionKeyConfig;
+    private final Duration credentialTTL;
 
     private final ConcurrentHashMap<String, EncryptedCredential> credentialStore = new ConcurrentHashMap<>();
-    private SecretKey secretKey;
-
-    @PostConstruct
-    private void init() {
-        byte[] keyBytes = encryptionKeyConfig.getBytes(StandardCharsets.UTF_8);
+    private final SecretKey secretKey;
+    public CredentialStoreService(
+        @ConfigProperty(name = "morpheus.queue.timeout") Duration timeout, 
+        @ConfigProperty(name = "morpheus.credential-store.encryption-key") String encryptionKey) {
+        this.credentialTTL = timeout;
+        byte[] keyBytes = encryptionKey.getBytes(StandardCharsets.UTF_8);
         if (keyBytes.length < 32) {
             throw new IllegalStateException(
                 "Encryption key must be at least 32 bytes for AES-256 (current: " + keyBytes.length + ")");
         }
-        secretKey = new SecretKeySpec(keyBytes, 0, 32, "AES");
+        this.secretKey = new SecretKeySpec(keyBytes, 0, 32, "AES");
         LOGGER.infof("Credential store initialized (TTL: %d seconds)", credentialTTL.toSeconds());
     }
 
@@ -78,7 +75,7 @@ public class CredentialStoreService {
 
         try {
             String secretValue = credential.secretValue();
-            String username = credential.username();
+            String username = credential.userName();
             CredentialType type = credential.detectType();
 
             EncryptedCredential encrypted = encrypt(userId, secretValue, username, type.name());
@@ -191,6 +188,7 @@ public class CredentialStoreService {
      * @param credentialType credential type ("PAT" or "SSH_KEY")
      * @param userId owner user ID for authorization check
      */
+    @RegisterForReflection
     public record CredentialData(
         String secretValue,
         String username,

@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.redhat.ecosystemappeng.morpheus.model.morpheus.SbomInfoType;
 
@@ -27,6 +28,7 @@ public record ReportRequest(
     JsonNode image,
     @Schema(description = "Credential for private repository access (optional, required only for private repository access)")
     @Valid
+    @JsonView(Views.Private.class)
     InlineCredential credential,
     @Schema(
         description = "SBOM data (required if image is not provided)",
@@ -63,30 +65,4 @@ public record ReportRequest(
     String ecosystem,
     @Schema(description = "Manifest file path")
     String manifestPath) {
-
-    /**
-     * Creates a copy of this request without the credential field.
-     * Used to prevent credentials from being persisted in MongoDB.
-     *
-     * @return new ReportRequest with credential set to null, or this instance if credential is already null
-     */
-    public ReportRequest withoutCredential() {
-        if (credential == null) {
-            return this;
-        }
-        return new ReportRequest(
-            id,
-            analysisType,
-            vulnerabilities,
-            image,
-            null,
-            sbom,
-            sbomInfoType,
-            metadata,
-            sourceRepo,
-            commitId,
-            ecosystem,
-            manifestPath
-        );
-    }
 }

@@ -147,11 +147,7 @@ public class ReportEndpoint {
         }
       }
 
-      ReportRequest requestWithoutCredential = request.credential() != null
-        ? request.withoutCredential()
-        : request;
-
-      ReportData res = reportService.process(requestWithoutCredential);
+      ReportData res = reportService.process(request);
 
       if (credentialId != null && res.report() != null) {
         credentialProcessingService.injectCredentialId(res.report(), credentialId);

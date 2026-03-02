@@ -5,7 +5,7 @@ import jakarta.ws.rs.BadRequestException;
 public interface CredentialData {
     String secretValue();
 
-    String username();
+    String userName();
 
     default CredentialType detectType() {
         String value = secretValue().trim();
@@ -19,7 +19,7 @@ public interface CredentialData {
         if (secretValue() == null || secretValue().isBlank()) {
             throw new BadRequestException("Secret value is required");
         }
-        if (detectType() == CredentialType.PAT && (username() == null || username().isBlank())) {
+        if (detectType() == CredentialType.PAT && (userName() == null || userName().isBlank())) {
             throw new BadRequestException("Username is required for PAT authentication");
         }
     }

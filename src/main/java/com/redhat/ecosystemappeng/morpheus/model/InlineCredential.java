@@ -12,9 +12,9 @@ public record InlineCredential(
     @Schema(required = true, description = "The secret value to be encrypted and stored")
     String secretValue,
     @Schema(description = "Git username (required for PAT authentication, ignored for SSH keys)")
-    String username) implements CredentialData {
+    String userName) implements CredentialData {
     @Override
     public String toString() {
-        return String.format("InlineCredential[secretValue=[REDACTED], username=%s]", username);
+        return String.format("InlineCredential[secretValue=[REDACTED], username=%s]", userName);
     }
 }
