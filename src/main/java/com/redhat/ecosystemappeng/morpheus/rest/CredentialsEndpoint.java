@@ -17,6 +17,7 @@ import com.redhat.ecosystemappeng.morpheus.service.CredentialStorageException;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
+import java.util.Objects;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -95,7 +96,7 @@ public class CredentialsEndpoint {
             @PathParam("credentialId") String credentialId,
             @Context SecurityContext securityContext) {
 
-        if (credentialId == null || credentialId.isBlank()) {
+        if (Objects.isNull(credentialId) || credentialId.isBlank()) {
             LOGGER.warnf("Invalid credentialId parameter: blank or null");
             return Response.status(Status.BAD_REQUEST)
                 .entity(new ErrorResponse("credentialId is required"))
@@ -103,7 +104,7 @@ public class CredentialsEndpoint {
         }
 
         // JWT authentication check
-        if (securityContext.getUserPrincipal() == null) {
+        if (Objects.isNull(securityContext.getUserPrincipal())) {
             LOGGER.warnf("Unauthenticated credential retrieval attempt: credentialId=%s",
                 credentialId);
             return Response.status(Status.UNAUTHORIZED)

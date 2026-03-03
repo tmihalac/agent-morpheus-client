@@ -57,6 +57,7 @@ import io.quarkus.scheduler.Scheduler;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
+import jakarta.ws.rs.core.Response;
 
 import static com.redhat.ecosystemappeng.morpheus.tracing.TextMapPropagatorImpl.getTraceIdFromContext;
 
@@ -376,7 +377,7 @@ public class ReportService {
     Set<String> languages;
     if (sourceLocation.contains(HOSTED_GITHUB_COM)) {
       var credential = request.credential();
-      if (credential != null && credential.userName() != null) {
+      if (Objects.nonNull(credential) && Objects.nonNull(credential.userName())) {
         languages = getGitHubLanguages(sourceLocation, "Bearer " + credential.secretValue());
       } else {
         languages = getGitHubLanguages(sourceLocation);
@@ -512,11 +513,11 @@ public class ReportService {
       return gitHubService.getLanguages(repoName).keySet();
     } catch (ClientWebApplicationException e) {
       int status = e.getResponse().getStatus();
-      if (status == 404) {
+      if (status == Response.Status.NOT_FOUND.getStatusCode()) {
         LOGGER.infof("Repository not found or is private (no user token provided): %s", repoName);
         return Collections.emptySet();
       }
-      if (status == 401 || status == 403) {
+      if (status == Response.Status.UNAUTHORIZED.getStatusCode() || status == Response.Status.FORBIDDEN.getStatusCode()) {
         LOGGER.infof("Insufficient permissions to access repository: %s (status=%d)", repoName, status);
         return Collections.emptySet();
       }

@@ -211,7 +211,7 @@ public class ProductEndpoint {
       @FormParam("file") FileUpload file,
       @FormParam("secretValue") String secretValue,
       @FormParam("username") String username) throws IOException {
-    if (file == null || file.uploadedFile() == null) {
+    if (Objects.isNull(file) || Objects.isNull(file.uploadedFile())) {
       throw new ValidationException(Map.of("file", "File is required"));
     }
 
@@ -219,7 +219,7 @@ public class ProductEndpoint {
       var reportRequest = cycloneDxUploadService.processUpload(cveId, fileInputStream);
 
       String credentialId = null;
-      if (secretValue != null && !secretValue.isBlank()) {
+      if (Objects.nonNull(secretValue) && !secretValue.isBlank()) {
         try {
           InlineCredential credential = new InlineCredential(secretValue, username);
           String userId = securityContext.getUserPrincipal().getName();
@@ -246,7 +246,7 @@ public class ProductEndpoint {
 
       var reportData = reportService.process(reportRequest);
 
-      if (credentialId != null && reportData.report() != null) {
+      if (Objects.nonNull(credentialId) && Objects.nonNull(reportData.report())) {
         credentialProcessingService.injectCredentialId(reportData.report(), credentialId);
       }
 

@@ -1,6 +1,7 @@
 package com.redhat.ecosystemappeng.morpheus.model;
 
 import jakarta.ws.rs.BadRequestException;
+import java.util.Objects;
 
 public interface CredentialData {
     String secretValue();
@@ -16,10 +17,10 @@ public interface CredentialData {
     }
 
     default void validate() {
-        if (secretValue() == null || secretValue().isBlank()) {
+        if (Objects.isNull(secretValue()) || secretValue().isBlank()) {
             throw new BadRequestException("Secret value is required");
         }
-        if (detectType() == CredentialType.PAT && (userName() == null || userName().isBlank())) {
+        if (detectType() == CredentialType.PAT && (Objects.isNull(userName()) || userName().isBlank())) {
             throw new BadRequestException("Username is required for PAT authentication");
         }
     }

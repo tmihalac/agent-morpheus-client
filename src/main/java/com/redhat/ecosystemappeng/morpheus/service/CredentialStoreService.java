@@ -20,6 +20,8 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.NotFoundException;
+import java.util.Base64;
+import java.util.Objects;
 
 /**
  * Service for secure, temporary storage of credentials with AES-256-GCM encryption.
@@ -63,13 +65,13 @@ public class CredentialStoreService {
      * @throws CredentialStorageException if encryption fails
      */
     public void store(String userId, String credentialId, InlineCredential credential) {
-        if (userId == null || userId.isBlank()) {
+        if (Objects.isNull(userId) || userId.isBlank()) {
             throw new IllegalArgumentException("userId is required");
         }
-        if (credentialId == null || credentialId.isBlank()) {
+        if (Objects.isNull(credentialId) || credentialId.isBlank()) {
             throw new IllegalArgumentException("credentialId is required");
         }
-        if (credential == null) {
+        if (Objects.isNull(credential)) {
             throw new IllegalArgumentException("credential is required");
         }
 
@@ -99,30 +101,22 @@ public class CredentialStoreService {
         return new EncryptedCredential(encryptedSecret, iv, userId, username, credentialType, expiresAt);
     }
 
-    private String decrypt(EncryptedCredential encrypted) throws Exception {
-        Cipher cipher = Cipher.getInstance(AES_ALGORITHM_GCM);
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(GCM_TAG_LENGTH, encrypted.iv()));
-        byte[] decryptedSecret = cipher.doFinal(encrypted.encryptedSecretValue());
-        return new String(decryptedSecret, StandardCharsets.UTF_8);
-    }
-    
     /**
-     * Retrieves and decrypts a credential, then immediately deletes it.
+     * Retrieves an encrypted credential, then immediately deletes it.
      *
      * @param credentialId unique credential identifier (required, non-blank)
-     * @return decrypted credential data containing secret value, username, type, and owner userId
+     * @return encrypted credential data (base64-encoded) for decryption by the external agent
      * @throws IllegalArgumentException if credentialId is null or blank
      * @throws NotFoundException if credential not found or expired
-     * @throws CredentialStorageException if decryption fails
      */
     public CredentialData retrieve(String credentialId) {
-        if (credentialId == null || credentialId.isBlank()) {
+        if (Objects.isNull(credentialId) || credentialId.isBlank()) {
             throw new IllegalArgumentException("credentialId is required");
         }
 
         EncryptedCredential encrypted = credentialStore.remove(credentialId);
 
-        if (encrypted == null) {
+        if (Objects.isNull(encrypted)) {
             throw new NotFoundException("Credential not found");
         }
 
@@ -132,21 +126,16 @@ public class CredentialStoreService {
             throw new NotFoundException("Credential expired");
         }
 
-        try {
-            String decryptedSecret = decrypt(encrypted);
+        LOGGER.infof("Credential %s (owner: %s, type: %s) retrieved by agent",
+                     credentialId, encrypted.userId(), encrypted.credentialType());
 
-            LOGGER.infof("Credential %s (owner: %s, type: %s) retrieved by agent",
-                         credentialId, encrypted.userId(), encrypted.credentialType());
-
-            return new CredentialData(
-                decryptedSecret,
-                encrypted.username(),
-                encrypted.credentialType(),
-                encrypted.userId()
-            );
-        } catch (Exception e) {
-            throw new CredentialStorageException("Failed to decrypt credential", e);
-        }
+        return new CredentialData(
+            Base64.getEncoder().encodeToString(encrypted.encryptedSecretValue()),
+            Base64.getEncoder().encodeToString(encrypted.iv()),
+            encrypted.username(),
+            encrypted.credentialType(),
+            encrypted.userId()
+        );
     }
 
     @Scheduled(every = "1m")
@@ -181,16 +170,18 @@ public class CredentialStoreService {
     }
 
     /**
-     * Decrypted credential data returned to caller.
+     * Encrypted credential data returned to caller for decryption by the external agent.
      *
-     * @param secretValue plaintext secret (PAT token or SSH private key)
+     * @param encryptedSecretValue base64-encoded AES-256-GCM encrypted secret
+     * @param iv base64-encoded initialization vector for AES-256-GCM decryption
      * @param username Git username for PAT authentication (may be null for SSH)
      * @param credentialType credential type ("PAT" or "SSH_KEY")
      * @param userId owner user ID for authorization check
      */
     @RegisterForReflection
     public record CredentialData(
-        String secretValue,
+        String encryptedSecretValue,
+        String iv,
         String username,
         String credentialType,
         String userId

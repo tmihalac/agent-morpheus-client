@@ -133,7 +133,7 @@ public class ReportEndpoint {
     ReportRequest request) {
     try {
       String credentialId = null;
-      if (request.credential() != null) {
+      if (Objects.nonNull(request.credential())) {
         try {
           String userId = securityContext.getUserPrincipal().getName();
           credentialId = credentialProcessingService.processAndStoreCredential(
@@ -149,7 +149,7 @@ public class ReportEndpoint {
 
       ReportData res = reportService.process(request);
 
-      if (credentialId != null && res.report() != null) {
+      if (Objects.nonNull(credentialId) && Objects.nonNull(res.report())) {
         credentialProcessingService.injectCredentialId(res.report(), credentialId);
       }
 

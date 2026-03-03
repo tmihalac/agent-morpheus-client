@@ -9,6 +9,7 @@ import com.redhat.ecosystemappeng.morpheus.model.InlineCredential;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
+import java.util.Objects;
 
 @ApplicationScoped
 public class CredentialProcessingService {
@@ -28,11 +29,11 @@ public class CredentialProcessingService {
      * @throws CredentialStorageException if encryption/storage fails
      */
     public String processAndStoreCredential(InlineCredential credential, String userId) {
-        if (credential == null || credential.secretValue() == null || credential.secretValue().isBlank()) {
+        if (Objects.isNull(credential) || Objects.isNull(credential.secretValue()) || credential.secretValue().isBlank()) {
             return null;
         }
 
-        if (userId == null || userId.isBlank()) {
+        if (Objects.isNull(userId) || userId.isBlank()) {
             throw new IllegalArgumentException("userId is required for credential storage");
         }
 
@@ -54,16 +55,16 @@ public class CredentialProcessingService {
      * @param credentialId credential identifier (may be null)
      */
     public void injectCredentialId(JsonNode reportNode, String credentialId) {
-        if (reportNode == null) {
+        if (Objects.isNull(reportNode)) {
             throw new IllegalArgumentException("reportNode is required");
         }
 
-        if (credentialId == null || credentialId.isBlank()) {
+        if (Objects.isNull(credentialId) || credentialId.isBlank()) {
             return;
         }
 
         ObjectNode inputNode = (ObjectNode) reportNode.get("input");
-        if (inputNode != null) {
+        if (Objects.nonNull(inputNode)) {
             inputNode.put("credentialId", credentialId);
             LOGGER.debugf("Injected credentialId into report payload: %s", credentialId);
         } else {
