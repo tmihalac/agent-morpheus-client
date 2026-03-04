@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Modal,
   ModalBody,
@@ -18,10 +18,14 @@ import {
   FormHelperText,
   HelperText,
   HelperTextItem,
-  Checkbox,
+  Switch,
   Label,
+  Popover,
+  FormGroupLabelHelp,
+  Card,
+  CardBody,
 } from "@patternfly/react-core";
-import { UploadIcon } from "@patternfly/react-icons";
+import { UploadIcon, KeyIcon, SecurityIcon } from "@patternfly/react-icons";
 import { useNavigate } from "react-router";
 import { ProductEndpointService } from "../generated-client/services/ProductEndpointService";
 import type { ReportData } from "../generated-client/models/ReportData";
@@ -41,6 +45,7 @@ const RequestAnalysisModal: React.FC<RequestAnalysisModalProps> = ({
   onClose,
 }) => {
   const navigate = useNavigate();
+  const labelHelpRef = useRef<HTMLButtonElement>(null);
   const [cveId, setCveId] = useState("");
   const [currentFiles, setCurrentFiles] = useState<File[]>([]);
   const [showStatus, setShowStatus] = useState(false);
@@ -116,7 +121,7 @@ const RequestAnalysisModal: React.FC<RequestAnalysisModalProps> = ({
     }
   };
 
-  const handleAuthenticationSecretCheckboxChange = (
+  const handlePrivateRepoSwitchChange = (
     _event: React.FormEvent<HTMLInputElement>,
     checked: boolean
   ) => {
@@ -171,7 +176,8 @@ const RequestAnalysisModal: React.FC<RequestAnalysisModalProps> = ({
     }
   }, [currentFiles.length, showStatus]);
 
-  // Note: Submit button is only disabled during submission progress, not based on form validation
+  // Submit button is only disabled during submission or when private repo is enabled with empty auth secret
+  const isSubmitDisabled = isSubmitting || (isAuthenticationSecretChecked && authenticationSecret.trim() === "");
 
   /**
    * Handles errors from the API submission, setting field-specific or generic error messages
@@ -345,7 +351,7 @@ const RequestAnalysisModal: React.FC<RequestAnalysisModalProps> = ({
             variant="danger"
             title="Error submitting analysis request"
             isInline
-            style={{ marginBottom: "var(--pf-v5-global--spacer--md)" }}
+            style={{ marginBottom: "var(--pf-t--global--spacer--md)" }}
           >
             {error}
           </Alert>
@@ -424,22 +430,33 @@ const RequestAnalysisModal: React.FC<RequestAnalysisModalProps> = ({
               </FormHelperText>
             )}
           </FormGroup>
-          <FormGroup>
-            <Checkbox
-              label="Private repository access"
-              id="authentication-secret-checkbox"
-              name="authentication-secret-checkbox"
-              isChecked={isAuthenticationSecretChecked}
-              onChange={handleAuthenticationSecretCheckboxChange}
-              isDisabled={isSubmitting}
-            />
-            {isAuthenticationSecretChecked && (
-              <>
+          <Switch
+            id="private-repo-switch"
+            label="Private repository"
+            isChecked={isAuthenticationSecretChecked}
+            onChange={handlePrivateRepoSwitchChange}
+            isDisabled={isSubmitting}
+          />
+          {isAuthenticationSecretChecked && (
+            <Card
+              variant="secondary"
+            >
+              <CardBody>
                 <FormGroup
                   label="Authentication secret"
                   isRequired
                   fieldId="authentication-secret"
-                  style={{ marginTop: "var(--pf-t--global--spacer--md)" }}
+                  labelHelp={
+                    <Popover
+                      triggerRef={labelHelpRef}
+                      bodyContent="Provide an SSH private key or Personal Access Token to authenticate with the private repository."
+                    >
+                      <FormGroupLabelHelp
+                        ref={labelHelpRef}
+                        aria-label="More info about authentication secret"
+                      />
+                    </Popover>
+                  }
                 >
                   <TextInput
                     isRequired
@@ -449,27 +466,31 @@ const RequestAnalysisModal: React.FC<RequestAnalysisModalProps> = ({
                     value={authenticationSecret}
                     onChange={handleAuthenticationSecretChange}
                     onBlur={handleAuthenticationSecretBlur}
-                    placeholder="Enter SSH private key or Personal Access Token"
                     isDisabled={isSubmitting}
                     validated={authenticationSecretError ? "error" : "default"}
                   />
-                  {detectCredentialType(authenticationSecret) && (
-                    <div style={{ marginTop: "var(--pf-t--global--spacer--sm)" }}>
-                      <Label color="blue" isCompact>
-                        {detectCredentialType(authenticationSecret) === "SSH_KEY"
-                          ? "Detected: SSH private key"
-                          : "Detected: Personal Access Token"}
-                      </Label>
-                    </div>
-                  )}
-                  {authenticationSecretError && (
-                    <FormHelperText>
-                      <HelperText>
+                  <FormHelperText>
+                    <HelperText>
+                      {authenticationSecretError ? (
                         <HelperTextItem variant="error">
                           {authenticationSecretError}
                         </HelperTextItem>
-                      </HelperText>
-                    </FormHelperText>
+                      ) : (
+                        <HelperTextItem>
+                          Accepts SSH private keys or Personal Access Tokens. Type will be auto-detected.
+                        </HelperTextItem>
+                      )}
+                    </HelperText>
+                  </FormHelperText>
+                  {detectCredentialType(authenticationSecret) === "SSH_KEY" && (
+                    <Label color="purple" icon={<KeyIcon />} style={{ marginTop: "var(--pf-t--global--spacer--sm)" }}>
+                      SSH key detected
+                    </Label>
+                  )}
+                  {detectCredentialType(authenticationSecret) === "PAT" && (
+                    <Label color="teal" icon={<SecurityIcon />} style={{ marginTop: "var(--pf-t--global--spacer--sm)" }}>
+                      Personal access token detected
+                    </Label>
                   )}
                 </FormGroup>
                 {detectCredentialType(authenticationSecret) === "PAT" && (
@@ -487,7 +508,6 @@ const RequestAnalysisModal: React.FC<RequestAnalysisModalProps> = ({
                       value={username}
                       onChange={handleUsernameChange}
                       onBlur={handleUsernameBlur}
-                      placeholder="Enter username for PAT authentication"
                       isDisabled={isSubmitting}
                       validated={usernameError ? "error" : "default"}
                     />
@@ -502,9 +522,9 @@ const RequestAnalysisModal: React.FC<RequestAnalysisModalProps> = ({
                     )}
                   </FormGroup>
                 )}
-              </>
-            )}
-          </FormGroup>
+              </CardBody>
+            </Card>
+          )}
         </Form>
       </ModalBody>
       <ModalFooter>
@@ -512,7 +532,7 @@ const RequestAnalysisModal: React.FC<RequestAnalysisModalProps> = ({
           key="submit"
           variant="primary"
           onClick={handleSubmit}
-          isDisabled={isSubmitting}
+          isDisabled={isSubmitDisabled}
           isLoading={isSubmitting}
         >
           {isSubmitting ? "Submitting..." : "Submit Analysis Request"}
