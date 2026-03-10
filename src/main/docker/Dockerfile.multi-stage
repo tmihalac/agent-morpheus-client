@@ -20,7 +20,7 @@ RUN ./mvnw verify -B -Pnative -Dmaven.test.skip=true -Dquarkus.profile=${QUARKUS
 RUN curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /tmp
 
 ## Stage 2 : create the docker final image
-FROM registry.redhat.io/ubi9/ubi-minimal:9.5
+FROM registry.redhat.io/ubi9/ubi-minimal:9.7
 
 LABEL description="Red Hat Agent Morpheus - UI"
 LABEL io.k8s.description="Red Hat Agent Morpheus - UI"
