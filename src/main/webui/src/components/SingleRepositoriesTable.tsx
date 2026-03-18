@@ -1,24 +1,18 @@
 import type { Report } from "../generated-client/models/Report";
-import type { ProductSummary } from "../generated-client/models/ProductSummary";
 import RepositoryReportsTableContent from "./RepositoryReportsTableContent";
-import { useRepositoryReports } from "../hooks/useRepositoryReports";
-import { POLL_INTERVAL_MS } from "../utils/polling";
 import { useTableParams } from "../hooks/useTableParams";
 import {
   REPOSITORY_REPORTS_VALID_SORT_COLUMNS,
   REPOSITORY_REPORTS_VALID_FILTER_KEYS,
 } from "../hooks/repositoryReportsTableParams";
+import { useRepositoryReports } from "../hooks/useRepositoryReports";
+import { REPORTS_TABLE_POLL_INTERVAL_MS } from "../utils/polling";
 
-interface RepositoryReportsTableProps {
-  cveId: string;
-  product: ProductSummary;
+function getCveIdForReport(report: Report): string | undefined {
+  return report.vulns?.[0]?.vulnId;
 }
 
-const RepositoryReportsTable: React.FC<RepositoryReportsTableProps> = ({
-  cveId,
-  product,
-}) => {
-  const productId = product.data.id;
+const SingleRepositoriesTable: React.FC = () => {
   const params = useTableParams({
     validSortColumns: REPOSITORY_REPORTS_VALID_SORT_COLUMNS,
     validFilterKeys: REPOSITORY_REPORTS_VALID_FILTER_KEYS,
@@ -31,15 +25,15 @@ const RepositoryReportsTable: React.FC<RepositoryReportsTableProps> = ({
     pagination,
   } = useRepositoryReports({
     tableData: params.data,
-    productId,
-    cveId,
-    shouldContinuePolling: () =>
-      product.summary?.productState !== "completed",
-    pollInterval: POLL_INTERVAL_MS,
+    pollInterval: REPORTS_TABLE_POLL_INTERVAL_MS,
   });
 
-
-  const getViewPath = (report: Report) => `/reports/product/${productId}/${cveId}/${report.id}`;
+  const getViewPath = (report: Report) => {
+    const cveId = getCveIdForReport(report);
+    return cveId
+      ? `/reports/component/${cveId}/${report.id}`
+      : "/reports/single-repositories";
+  };
 
   return (
     <RepositoryReportsTableContent
@@ -49,10 +43,10 @@ const RepositoryReportsTable: React.FC<RepositoryReportsTableProps> = ({
       pagination={pagination}
       tableParams={params}
       getViewPath={getViewPath}
-      showCveIdColumn={false}
-      ariaLabel="Repository reports table"
+      showCveIdColumn={true}
+      ariaLabel="Single repositories table"
     />
   );
 };
 
-export default RepositoryReportsTable;
+export default SingleRepositoriesTable;
