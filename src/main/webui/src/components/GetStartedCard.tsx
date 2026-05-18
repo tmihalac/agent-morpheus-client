@@ -28,7 +28,7 @@ import { PlusIcon, ChartLineIcon, BookOpenIcon } from "@patternfly/react-icons";
 import { createUseStyles } from "react-jss";
 import { css } from "@patternfly/react-styles";
 import { useNavigate } from "react-router";
-import RequestAnalysisModal from "./RequestAnalysisModal";
+import RequestAnalysisModal from "./request-analysis/RequestAnalysisModal";
 
 const useStyles = createUseStyles({
   action: {
