@@ -1,254 +1,49 @@
 # request-analysis-modal Specification
 
 ## Purpose
-Provides a modal interface for users to request analysis of CycloneDX Software Bill of Materials (SBOM) files with CVE ID validation and optional private repository authentication credentials.
+Shared Request Analysis modal behavior for both input modes ([SBOM](../request-analysis-modal-sbom/spec.md), [Single Repository](../request-analysis-modal-single-repository/spec.md)): mode toggle, CVE ID validation, optional private-repository credentials, field/generic error handling, submit UX, and **Enter** parity for TextInputs as defined in **Keyboard Enter on modal text fields** below.
+
+## Implementation (non-normative)
+Modal UI: `src/main/webui/src/components/request-analysis/`. Logic: `useAnalysisRequestForm.ts`; helpers: `requestAnalysisValidation.ts`, `requestAnalysisSbom.ts`, `requestAnalysisSubmit.ts`.
+
 ## Requirements
-### Requirement: Request Analysis Modal Submission
-The request analysis modal SHALL support two submission paths depending on the selected mode. When **SBOM** mode is selected, the modal SHALL accept both SPDX (multi-component) and CycloneDX (single component) SBOM file formats, use the standard PatternFly `FileUpload` component, and perform basic parsing to detect SPDX 2.3 or CycloneDX 1.6 format. When a valid SPDX 2.3 file is detected, the modal SHALL submit to `/api/v1/products/upload-spdx` and navigate to the product page; when a valid CycloneDX 1.6 file is detected, the modal SHALL submit to `/api/v1/products/upload-cyclonedx` and navigate to the repository report page. When **Single Repository** mode is selected, the modal SHALL submit a `ReportRequest` body (including CVE ID in `vulnerabilities`, `sourceRepo`, `commitId`, `analysisType: "source"`, required `metadata`, and optional `credential`) to `POST /api/v1/reports/new` and navigate to the repository report page. In both modes the modal SHALL navigate on successful response (HTTP 202) and close. The modal SHALL distinguish between JSON parsing errors and unsupported format errors for SBOM mode; if the file is not valid JSON or format is not recognized, the modal SHALL display the appropriate error under the file upload field and prevent the API call. For Single Repository mode the modal SHALL validate that Source Repository is a valid HTTP or HTTPS URL only (git: and git@ are not accepted). The modal SHALL validate the CVE ID format using `^CVE-[0-9]{4}-[0-9]{4,19}$` on blur, Enter, or submit, and display "Required" under empty required fields. The submit button SHALL be disabled during submission or when the private repository switch is on and the authentication secret is empty. When the CycloneDX upload API returns HTTP 400 (or other error) for a submission, the backend SHALL NOT have created a product row for that failed attempt alone; after the user dismisses or corrects the error and the reports list refreshes, they SHALL NOT see a new SBOM product entry with an empty Finding that corresponds solely to that failed request.
 
-#### Scenario: File selection using standard FileUpload component
-- **WHEN** a user views the request analysis modal in SBOM mode
-- **THEN** the SBOM file field displays a standard PatternFly `FileUpload` component
-- **AND** the component shows a browse button labeled "Upload" and a placeholder text "Drag and drop a file or upload one"
-- **AND** users can click the browse button to select a file from their file system
-- **AND** users can drag and drop a file onto the component
-- **AND** when a file is selected, the filename is displayed in the component
-- **AND** users can clear the selected file using a clear button
+### Requirement: Mode selector and shared layout
+The modal SHALL expose **SBOM** and **Single Repository** via PatternFly `ToggleGroup`/`ToggleGroupItem` ("SBOM", "Single Repository"), exactly one selected, meaningful `aria-label`, SBOM selected by default. Switching modes SHALL clear generic Alert errors and **all** field-specific errors **except `cveId`**. CVE ID SHALL always appear. Private repository controls SHALL behave per **Private Repository Authentication**. SBOM mode shows file upload only; Single Repository shows Source Repo + Commit ID only.
 
-#### Scenario: Invalid JSON file error display
-- **WHEN** a user selects a file that is not valid JSON using the FileUpload component and clicks the "Submit Analysis Request" button
-- **THEN** the modal attempts to parse the file as JSON, detects that the file is not valid JSON, immediately displays "File is not valid JSON" under the file upload field, prevents the API call, and preserves form data
-
-#### Scenario: Unsupported SBOM format error display (valid JSON but unsupported format)
-- **WHEN** a user selects a file that is valid JSON but not recognized as SPDX 2.3 or CycloneDX 1.6 and clicks submit
-- **THEN** the modal displays a format validation error under the file upload field (e.g., "File format not supported. Please upload an SPDX 2.3 or CycloneDX 1.6 file."), prevents the API call, and preserves form data
-
-#### Scenario: Successful SPDX submission with credentials and navigation to product page
-- **WHEN** a user fills in a valid CVE ID and selects a valid SPDX 2.3 file using the FileUpload component in the request analysis modal
-- **AND** enables the "Private repository" switch and provides valid credentials (authentication secret and optionally username)
-- **AND** clicks the "Submit Analysis Request" button
-- **THEN** the modal validates the CVE ID format matches the official CVE regex pattern `^CVE-[0-9]{4}-[0-9]{4,19}$`
-- **AND** parses the file as JSON successfully
-- **AND** detects it is SPDX 2.3 format
-- **AND** creates a multipart form with the vulnerability ID, file, and credentials (secretValue and optionally userName)
-- **AND** calls the `/api/v1/products/upload-spdx` API endpoint using the generated OpenAPI client service with the credentials included in the form data
-- **AND** displays a loading state (disables submit button) during the API call
-- **AND** upon successful response (HTTP 202), extracts the `productId` field from the response
-- **AND** navigates to the product page at `/reports/product/:productId/:cveId` where `:productId` is from the API response and `:cveId` is the CVE ID from the form
-- **AND** closes the modal
-
-#### Scenario: Successful SPDX submission without credentials and navigation to product page
-- **WHEN** a user fills in a valid CVE ID and selects a valid SPDX 2.3 file using the FileUpload component in the request analysis modal
-- **AND** does not enable the "Private repository" switch
-- **AND** clicks the "Submit Analysis Request" button
-- **THEN** the modal validates the CVE ID format matches the official CVE regex pattern `^CVE-[0-9]{4}-[0-9]{4,19}$`
-- **AND** parses the file as JSON successfully
-- **AND** detects it is SPDX 2.3 format
-- **AND** creates a multipart form with the vulnerability ID and file (without credentials)
-- **AND** calls the `/api/v1/products/upload-spdx` API endpoint using the generated OpenAPI client service
-- **AND** displays a loading state (disables submit button) during the API call
-- **AND** upon successful response (HTTP 202), extracts the `productId` field from the response
-- **AND** navigates to the product page at `/reports/product/:productId/:cveId` where `:productId` is from the API response and `:cveId` is the CVE ID from the form
-- **AND** closes the modal
-
-#### Scenario: Successful CycloneDX submission and navigation to report page
-- **WHEN** a user fills in a valid CVE ID and selects a valid CycloneDX 1.6 file using the FileUpload component in the request analysis modal
-- **AND** clicks the "Submit Analysis Request" button
-- **THEN** the modal validates the CVE ID format matches the official CVE regex pattern `^CVE-[0-9]{4}-[0-9]{4,19}$`
-- **AND** parses the file as JSON successfully
-- **AND** detects it is CycloneDX 1.6 format
-- **AND** creates a multipart form with the CVE ID and file
-- **AND** calls the `/api/v1/products/upload-cyclonedx` API endpoint using the generated OpenAPI client service
-- **AND** upon successful response (HTTP 202), extracts the `reportRequestId.id` field from the `ReportData` response
-- **AND** navigates to the repository report page at `/reports/component/:cveId/:reportId` where `:cveId` is the CVE ID from the form and `:reportId` is the `reportRequestId.id` from the API response
-- **AND** closes the modal
-
-#### Scenario: Successful submission and navigation (Single Repository mode)
-- **WHEN** the user selects Single Repository mode and fills in a valid CVE ID, Source Repository (HTTP or HTTPS URL), and Commit ID in the request analysis modal
-- **AND** optionally toggles Private repository and provides credentials
-- **AND** clicks the "Submit Analysis Request" button
-- **THEN** the modal validates the CVE ID format, required fields (Source Repository, Commit ID), and Source Repository URL format (HTTP/HTTPS only)
-- **AND** builds a `ReportRequest` with `analysisType: "source"`, `vulnerabilities` containing the CVE ID, `sourceRepo`, `commitId`, `metadata`, and optional `credential`
-- **AND** calls the `POST /api/v1/reports/new` API endpoint using the generated OpenAPI client (e.g. ReportEndpointService) with `submit: true`
-- **AND** upon successful response (HTTP 202), extracts the `reportRequestId.id` from the response
-- **AND** navigates to the repository report page at `/reports/component/:cveId/:reportId`
-- **AND** closes the modal
-
-#### Scenario: Format error clearing on file change
-- **WHEN** a user has a format validation error or JSON parsing error displayed under the file upload field and selects a different file using the FileUpload component
-- **THEN** the error message is cleared
-
-#### Scenario: File clear functionality
-- **WHEN** a user has selected a file using the FileUpload component and clicks the clear button
-- **THEN** the selected file is removed, the filename is cleared, and any file-related error messages are cleared
-
-#### Scenario: API field-specific error display
-- **WHEN** a user submits the request analysis modal and the API call fails with HTTP 400 (Bad Request) with field-specific errors for `cveId`, `file` (SBOM mode), `sourceRepo`, `commitId` (Single Repository mode), or credentials
-- **THEN** the modal displays the error message(s) under the corresponding field(s) using `FormHelperText` with error variant
-- **AND** each error message is clearly visible and associated with its input field
-- **AND** the modal remains open
-- **AND** the submit button is re-enabled
-- **AND** the form data is preserved
-
-#### Scenario: CycloneDX API validation error does not leave a ghost product in the reports list
-- **WHEN** a user submits CycloneDX via the request analysis modal and the server responds with HTTP 400 for that request (including field-mapped validation or SBOM validation issues)
-- **THEN** the modal displays errors as already specified (field-specific or Alert) and remains open
-- **AND** a subsequent refresh of the SBOMs reports list SHALL NOT show a new product row that exists only because of that failed submission (no orphan product for that attempt)
-
-#### Scenario: Error message clearing on field modification
-- **WHEN** a user has a field-specific error displayed under a form field
-- **AND** the user modifies the corresponding field (enters text in CVE ID, file selection, Source Repository, Commit ID, or credential fields)
-- **THEN** the error message for that field is cleared
-- **AND** the error message no longer displays under the modified field
-
-#### Scenario: Non-field-specific error handling
-- **WHEN** a user submits the request analysis modal with a valid file format
-- **AND** the API call fails with a non-validation error (429, 500, or network error)
-- **THEN** the modal displays an appropriate error message using the Alert component
-- **AND** the modal remains open
-- **AND** the submit button is re-enabled
-- **AND** the form data is preserved
-
-#### Scenario: Loading state during submission
-- **WHEN** a user clicks the "Submit Analysis Request" button
-- **AND** the form validation passes for the selected mode (SBOM: CVE ID and file, file valid JSON and format recognized; Single Repository: CVE ID, Source Repository, Commit ID, and Source Repository URL format HTTP/HTTPS only)
-- **THEN** the submit button is disabled only during the API call submission progress
-- **AND** a loading indicator is displayed (if applicable)
-- **AND** the form cannot be modified during the request
-- **AND** the cancel button remains enabled to allow the user to cancel
-
-#### Scenario: CVE ID format validation
-- **WHEN** a user enters a CVE ID that does not match the official CVE regex pattern `^CVE-[0-9]{4}-[0-9]{4,19}$` in the request analysis modal
-- **AND** the CVE ID field loses focus (blur event), the user presses Enter in the field, or the user clicks submit
-- **THEN** the modal validates the CVE ID format
-- **AND** displays an error message under the CVE ID field indicating the format is invalid
-- **AND** the error message clearly describes the required format (e.g., "CVE ID format is invalid. Must match the official CVE pattern CVE-YYYY-NNNN+")
-- **AND** if validation occurs on submit click, the API call is prevented and the modal remains open with form data preserved
-
-#### Scenario: Required field validation on submit (SBOM mode)
-- **WHEN** the user has SBOM mode selected and clicks the "Submit Analysis Request" button
-- **AND** the CVE ID field is empty, no file has been selected, or both
-- **THEN** the modal validates that required fields are provided before making the API call
-- **AND** displays a "Required" error message under each empty field (CVE ID field, file field, or both)
-- **AND** prevents the API call from being made
-- **AND** the modal remains open with the form data preserved
-
-#### Scenario: Required field validation on submit (Single Repository mode)
-- **WHEN** the user has Single Repository mode selected and clicks the "Submit Analysis Request" button
-- **AND** the CVE ID field is empty, Source Repository is empty, Commit ID is empty, or any combination
-- **THEN** the modal validates that CVE ID, Source Repository, and Commit ID are provided before making the API call
-- **AND** displays a "Required" error message under each empty field
-- **AND** prevents the API call from being made
-- **AND** the modal remains open with the form data preserved
-
-#### Scenario: Source Repository URL format validation (invalid)
-- **WHEN** the user has Single Repository mode selected and enters a non-empty value in the Source Repository field that is not a valid HTTP or HTTPS URL (e.g. missing scheme, invalid host, or a git: or git@ URL which is not accepted)
-- **AND** the Source Repository field loses focus (blur) or the user clicks submit
-- **THEN** the modal validates the Source Repository URL format (HTTP/HTTPS only)
-- **AND** displays an error message under the Source Repository field indicating the URL format is invalid
-- **AND** if validation occurs on submit click, the API call is prevented and the modal remains open with form data preserved
-
-#### Scenario: Source Repository URL format validation (valid / on blur)
-- **WHEN** the user has Single Repository mode selected and enters a valid HTTP or HTTPS URL in the Source Repository field (e.g. https://github.com/org/repo)
-- **AND** the Source Repository field loses focus (blur)
-- **THEN** the modal validates the Source Repository URL format
-- **AND** no error is displayed under the Source Repository field for URL format
-- **AND** the user may submit when other required fields are satisfied
-
-#### Scenario: Submit button and validation behavior
-- **WHEN** the request analysis modal is displayed
-- **THEN** the submit button is enabled when required fields for the selected mode are satisfied (or as per existing rules for SBOM)
-- **AND** the submit button is disabled when submission is in progress (`isSubmitting` state is true)
-- **AND** the submit button is disabled when the private repository switch is on and the authentication secret field is empty
-- **AND** CVE ID format validation errors are shown on blur, Enter key press, or submit click
-- **AND** required field validation errors are shown when the user clicks submit
-- **AND** in Single Repository mode, Source Repository URL format validation (HTTP/HTTPS only) errors are shown on blur or submit click
-- **AND** in SBOM mode, JSON parsing errors and format validation errors are shown when the user clicks submit
+#### Scenario: Mode switch clears non-CVE errors
+- **WHEN** the user switches between SBOM and Single Repository via the toggle  
+- **THEN** generic submission error and non-CVE field errors are cleared; CVE ID value and CVE error persist; controls match the newly selected mode.
 
 ### Requirement: Private Repository Authentication
-The request analysis modal SHALL provide optional authentication credentials for private repository access. When the "Private repository" switch is toggled on, the modal SHALL display an authentication secret field inside a secondary Card. The modal SHALL automatically detect the credential type (SSH private key or Personal Access Token) based on the secret value content and display a colored Label indicator showing the detected type. For Personal Access Token credentials, the modal SHALL display a username field. The modal SHALL validate that the authentication secret is provided when the switch is on, and that the username is provided when a Personal Access Token is detected. The submit button SHALL be disabled when the switch is on and the authentication secret is empty. All credential fields and errors SHALL be cleared when the switch is toggled off. When submitting SPDX files, the modal SHALL include credentials in the form data sent to the `/api/v1/products/upload-spdx` endpoint when the private repository switch is enabled. When submitting CycloneDX files, the modal SHALL include credentials in the form data sent to the `/api/v1/products/upload-cyclonedx` endpoint when the private repository switch is enabled.
+With **Private repository** ON: modal SHALL show required secret (`type="password"`) inside secondary `Card`; label-help popover with text *Provide an SSH private key or Personal Access Token to authenticate with the private repository.*; helper *Accepts SSH private keys… auto-detected.*; PAT vs SSH inferred from secret (starts with `-----BEGIN`/`-----END` pattern ⇒ SSH purple “SSH key” label, no username; otherwise PAT ⇒ teal “PAT” label + required username). With switch ON secret empty ⇒ submit disabled. Client-side: secret required when switch ON; when PAT ⇒ username required. Switch OFF ⇒ clear secret, username, and auth errors; editing secret/username clears **that** field’s error. SPDX/CycloneDX uploads MUST attach credentials when switch ON (`/upload-spdx`, `/upload-cyclonedx`); Single Repository attaches `credential` on `ReportRequest` per sibling specs.
 
-#### Scenario: Private repository switch
-- **WHEN** a user toggles the "Private repository" switch on in the request analysis modal
-- **THEN** the modal displays an authentication secret field (password input type) inside a secondary Card
-- **AND** the authentication secret field is marked as required
-- **AND** the authentication secret field has a label help popover explaining "Provide an SSH private key or Personal Access Token to authenticate with the private repository."
-- **AND** helper text below the field reads "Accepts SSH private keys or Personal Access Tokens. Type will be auto-detected."
-- **AND** the submit button is disabled until the authentication secret is provided
+#### Scenario: PAT requires username on submit  
+- **WHEN** Private repository ON, PAT detected, username empty  
+- **AND** user submits  
+- **THEN** *Username is required for Personal Access Token authentication* under username; API not called; modal stays open.
 
-#### Scenario: Auto-detect SSH private key
-- **WHEN** a user enters a value in the authentication secret field that starts with "-----BEGIN" and contains "-----END"
-- **THEN** the modal automatically detects the credential type as SSH private key
-- **AND** displays a purple Label with a key icon below the field showing "SSH key detected"
-- **AND** does NOT display the username field (username is not required for SSH keys)
+### Requirement: CVE ID validation
+CVE ID MUST match `^CVE-[0-9]{4}-[0-9]{4,19}$` when validation runs for that field (including **blur** and **submit**). Invalid format ⇒ message explaining expected pattern ("CVE-YYYY…"). Empty required ⇒ *Required* on submit (aligned with tab specs).
 
-#### Scenario: Auto-detect Personal Access Token
-- **WHEN** a user enters a value in the authentication secret field that does NOT start with "-----BEGIN"
-- **THEN** the modal automatically detects the credential type as Personal Access Token
-- **AND** displays a teal Label with a security icon below the field showing "Personal access token detected"
-- **AND** displays a username field below the authentication secret field
-- **AND** the username field is marked as required
+#### Scenario: Invalid CVE format surfaced on blur or submit
+- **WHEN** CVE is non-empty, invalid versus the regex above, **and** the field **blurs** or the user submits  
+- **THEN** CVE shows the format message and submission is blocked until resolved.
 
-#### Scenario: Authentication secret validation
-- **WHEN** the "Private repository" switch is on
-- **AND** the user clicks submit without entering an authentication secret
-- **THEN** the modal displays a "Required" error message under the authentication secret field
-- **AND** prevents the API call from being made
-- **AND** the modal remains open with form data preserved
+### Requirement: Keyboard Enter on modal text fields
+For **every** modal **PatternFly TextInput** (CVE ID, Source Repository, Commit ID, Authentication secret, Username), pressing **`Enter`** while focused SHALL **`preventDefault`** and SHALL invoke the **identical client validation/update paths** implemented for **`blur`** on that same field—including CVE format, Source Repo URL checks, credential required/PAT username checks. **Excluded from this requirement:** **`FileUpload`**, **`ToggleGroup` / mode chooser**, **`Switch`**, other non-text controls. Fields with **no** blur validation rule today only receive **`preventDefault`** (currently **Commit ID**).
 
-#### Scenario: Username validation for PAT
-- **WHEN** the "Private repository" switch is on
-- **AND** the user enters a Personal Access Token (detected type is PAT)
-- **AND** the user clicks submit without entering a username
-- **THEN** the modal displays an error message "Username is required for Personal Access Token authentication" under the username field
-- **AND** prevents the API call from being made
-- **AND** the modal remains open with form data preserved
+#### Scenario: Enter matches blur for all modal TextInputs
+- **WHEN** focus is in any CVE, Source Repo, Commit ID, Authentication secret, or Username TextInput listed above  
+- **AND** the user presses Enter  
+- **THEN** Enter is intercepted (no unintended control action) AND each field behaves exactly as documented for blur for **that field** wherever blur rules exist; Commit ID invokes only interception.
 
-#### Scenario: Clear credentials on switch off
-- **WHEN** the "Private repository" switch is on
-- **AND** the user has entered values in the authentication secret field and/or username field
-- **AND** the user toggles the "Private repository" switch off
-- **THEN** the authentication secret value is cleared
-- **AND** the username value is cleared
-- **AND** all authentication-related error messages are cleared
-- **AND** the authentication secret and username fields are no longer displayed
+### Requirement: Errors, loading, generic failures
+Editing a control clears **that field’s** error. Non-validation API failures (e.g. 429/500/network) ⇒ Alert; modal open; form preserved; submit re-enabled. While submit in-flight: duplicate submit prevented; disabling rules from private repo loading still apply (see sibling specs); cancel remains usable unless product rules say otherwise.
 
-#### Scenario: Clear authentication errors on field modification
-- **WHEN** a user has an authentication secret error or username error displayed
-- **AND** the user modifies the corresponding field (enters text in authentication secret or username field)
-- **THEN** the error message for that field is cleared
-- **AND** the error message no longer displays under the modified field
+#### Scenario: Preserve form after non-field API error  
+- **WHEN** client validation passes and the API fails without field mapping  
+- **THEN** Alert shows a message; form values remain; loading ends.
 
-### Requirement: Request Analysis Mode Selector
-The request analysis modal SHALL offer two input modes selectable via a PatternFly ToggleGroup with tab-like functionality: **SBOM** and **Single Repository**. The modal SHALL render a `ToggleGroup` containing two `ToggleGroupItem` components, one with text "SBOM" and one with text "Single Repository". Exactly one item SHALL be selected at a time; the selected item SHALL indicate the active mode. The ToggleGroup SHALL have an appropriate `aria-label` (e.g. for input type or analysis mode). When the user selects the other item, the mode SHALL switch and the selection state SHALL update accordingly; when the mode is switched, the modal SHALL clear the generic (Alert) error and all field-specific errors except the CVE ID field error, so that errors from the previous mode are not shown but the CVE ID error (if any) is preserved. In both modes the modal SHALL display the CVE ID field, the Private repository switch, and when the switch is on the authentication secret (token) and username fields. When **SBOM** is selected the modal SHALL show the SBOM file upload field. When **Single Repository** is selected the modal SHALL show the Source Repository and Commit ID fields instead of the SBOM file field.
-
-#### Scenario: Mode selector visibility and selection
-- **WHEN** the request analysis modal is opened
-- **THEN** a ToggleGroup is displayed with two items: "SBOM" and "Single Repository"
-- **AND** SBOM mode is selected by default (SBOM item is selected)
-- **AND** exactly one ToggleGroupItem is selected at any time
-- **AND** clicking the non-selected item switches the mode and updates the selection to that item
-
-#### Scenario: Clear errors when switching mode
-- **WHEN** the user has one mode selected (SBOM or Single Repository) and one or more errors are displayed (e.g. generic Alert error, CVE ID error, file error, Source Repository error, Commit ID error, or authentication-related errors)
-- **AND** the user clicks the other ToggleGroup item to switch to the opposite mode
-- **THEN** the modal clears the generic error and all field-specific errors except the CVE ID error
-- **AND** the CVE ID error (if any) remains visible after the mode switch; all other error messages are cleared
-- **AND** the form fields for the newly selected mode are shown without stale errors from the previous mode (except CVE ID which is shared)
-
-#### Scenario: Shared fields in both modes
-- **WHEN** either SBOM or Single Repository mode is selected
-- **THEN** the CVE ID field is visible and required
-- **AND** the Private repository switch is visible
-- **AND** when the Private repository switch is on, the authentication secret (token) and username (for PAT) fields are shown in a secondary Card as in the existing Private Repository Authentication requirement
-
-#### Scenario: SBOM mode shows file field
-- **WHEN** the user selects the SBOM item in the ToggleGroup
-- **THEN** the SBOM file upload field is displayed
-- **AND** the Source Repository and Commit ID fields are not displayed
-
-#### Scenario: Single Repository mode shows repository fields
-- **WHEN** the user selects the Single Repository item in the ToggleGroup
-- **THEN** the Source Repository and Commit ID input fields are displayed
-- **AND** the SBOM file upload field is not displayed
-
+### Requirement: Submit button
+Submit enabled if not submitting, mode-specific required inputs satisfied ([SBOM](../request-analysis-modal-sbom/spec.md) / [Single Repository](../request-analysis-modal-single-repository/spec.md)), and not blocked by Private repository empty secret rule.

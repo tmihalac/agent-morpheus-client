@@ -11,8 +11,8 @@ import {
   ListItem,
   Stack,
 } from "@patternfly/react-core";
-import { getSbomMetadataValidationIssueCopy } from "../constants/sbomMetadataValidationMessages";
-import type { SbomValidationIssueEntry } from "../utils/errorHandling";
+import { getSbomMetadataValidationIssueCopy } from "../../constants/sbomMetadataValidationMessages";
+import type { SbomValidationIssueEntry } from "../../utils/errorHandling";
 
 export interface RequestAnalysisSubmitErrorAlertsProps {
   sbomValidationIssues: SbomValidationIssueEntry[] | null;
