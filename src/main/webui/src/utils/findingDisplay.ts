@@ -10,7 +10,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import type { ProductSummary } from "../generated-client/models/ProductSummary";
 import { apiToFindingType } from "./justificationStatus";
+
+export type ProductAnalysisStatus = "in-progress" | "completed";
 
 /**
  * Discriminated union: finding type plus optional count where applicable.
@@ -56,6 +59,17 @@ function hasFailedInCounts(statusCounts: Record<string, number>): boolean {
 
 function getExcludedCount(statusCounts: Record<string, number>): number {
   return statusCounts["excluded"] ?? 0;
+}
+
+/**
+ * Overall SBOM batch status for the report page header (In progress vs Completed).
+ * Uses backend-computed summary.productState (processing | analysing | completed).
+ */
+export function getProductAnalysisStatus(
+  product: ProductSummary,
+): ProductAnalysisStatus {
+  const productState = (product.summary?.productState ?? "").toLowerCase();
+  return productState === "completed" ? "completed" : "in-progress";
 }
 
 /**

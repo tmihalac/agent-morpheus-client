@@ -11,18 +11,17 @@
 // limitations under the License.
 
 import { useMemo } from "react";
-import { useParams, Link } from "react-router";
+import { useParams } from "react-router";
 import {
   PageSection,
   Grid,
   GridItem,
   Alert,
   AlertVariant,
-  Breadcrumb,
-  BreadcrumbItem,
-  Title,
 } from "@patternfly/react-core";
 import { useReport } from "../hooks/useReport";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import ReportPageHeader from "../components/ReportPageHeader";
 import ReportDetails from "../components/ReportDetails";
 import ReportAdditionalDetails from "../components/ReportAdditionalDetails";
 import ReportCveStatusPieChart from "../components/ReportCveStatusPieChart";
@@ -30,7 +29,6 @@ import ReportComponentStatesPieChart from "../components/ReportComponentStatesPi
 import RepositoryReportsTable from "../components/RepositoryReportsTable";
 import ReportPageSkeleton from "../components/ReportPageSkeleton";
 import { getErrorMessage } from "../utils/errorHandling";
-import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import {
   pageTitleProductReport,
   pageTitleReportInvalidParams,
@@ -102,21 +100,7 @@ const ReportPage: React.FC = () => {
   return (
     <>
       <PageSection>
-        <Grid hasGutter>
-          <GridItem>
-            <Breadcrumb>
-              <BreadcrumbItem>
-                <Link to="/reports">Reports</Link>
-              </BreadcrumbItem>
-              <BreadcrumbItem isActive>{breadcrumbText}</BreadcrumbItem>
-            </Breadcrumb>
-          </GridItem>
-          <GridItem>                          
-            <Title headingLevel="h1" size="2xl">
-              <strong>Report:</strong> {breadcrumbText}
-            </Title>                                       
-          </GridItem>
-        </Grid>
+        <ReportPageHeader breadcrumbText={breadcrumbText} product={data} />
       </PageSection>
       <PageSection>
         <Grid hasGutter>
