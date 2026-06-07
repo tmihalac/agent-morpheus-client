@@ -26,6 +26,7 @@ import RequestAnalysisModeToggle from "./RequestAnalysisModeToggle";
 import RequestAnalysisCveIdField from "./RequestAnalysisCveIdField";
 import RequestAnalysisSbomFileField from "./RequestAnalysisSbomFileField";
 import RequestAnalysisSingleRepositoryFields from "./RequestAnalysisSingleRepositoryFields";
+import RequestAnalysisSingleRepositoryAdvancedSection from "./RequestAnalysisSingleRepositoryAdvancedSection";
 import RequestAnalysisPrivateRepositorySection from "./RequestAnalysisPrivateRepositorySection";
 import RequestAnalysisRpmPackageField from "./RequestAnalysisRpmPackageField";
 import RequestAnalysisRpmArchitectureField from "./RequestAnalysisRpmArchitectureField";
@@ -110,6 +111,17 @@ const RequestAnalysisModal: React.FC<RequestAnalysisModalProps> = ({ onClose }) 
               authenticationSecretError={errors.authenticationSecret}
               username={values.username}
               usernameError={errors.username}
+              isSubmitting={state.isSubmitting}
+              handlers={handlers}
+            />
+          )}
+          {values.mode === "single-repository" && (
+            <RequestAnalysisSingleRepositoryAdvancedSection
+              isAdvancedExpanded={values.isAdvancedExpanded}
+              manifestPath={values.manifestPath}
+              manifestPathError={errors.manifestPath}
+              ecosystem={values.ecosystem}
+              ecosystemError={errors.ecosystem}
               isSubmitting={state.isSubmitting}
               handlers={handlers}
             />

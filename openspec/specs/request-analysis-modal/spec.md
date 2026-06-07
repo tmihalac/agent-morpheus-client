@@ -11,7 +11,7 @@ Modal UI: `src/main/webui/src/components/request-analysis/`. Logic: `useAnalysis
 ## Requirements
 
 ### Requirement: Mode selector and shared layout
-The modal SHALL expose **SBOM**, **Single Repository**, and **RPM** via PatternFly `ToggleGroup`/`ToggleGroupItem` ("SBOM", "Single Repository", "RPM"), exactly one selected, meaningful `aria-label`, SBOM selected by default. Switching modes SHALL clear generic Alert errors and **all** field-specific errors **except `cveId`**. CVE ID SHALL always appear. Private repository controls SHALL follow **Private Repository Authentication** (including visibility rules when **RPM** is selected). SBOM mode shows file upload only; Single Repository shows Source Repo + Commit ID only; RPM mode shows Package NVR + Architecture only per **[RPM fields](../request-analysis-modal-rpm-fields/spec.md)**.
+The modal SHALL expose **SBOM**, **Single Repository**, and **RPM** via PatternFly `ToggleGroup`/`ToggleGroupItem` ("SBOM", "Single Repository", "RPM"), exactly one selected, meaningful `aria-label`, SBOM selected by default. Switching modes SHALL clear generic Alert errors and **all** field-specific errors **except `cveId`**. CVE ID SHALL always appear. Private repository controls SHALL follow **Private Repository Authentication** (including visibility rules when **RPM** is selected). SBOM mode shows file upload only; Single Repository shows Source Repo, Commit ID, Private repository, then collapsible **Advanced** per **[Single Repository](../request-analysis-modal-single-repository/spec.md)**; RPM mode shows Package NVR + Architecture only per **[RPM fields](../request-analysis-modal-rpm-fields/spec.md)**.
 
 #### Scenario: Mode switch clears non-CVE errors
 - **WHEN** the user switches among SBOM, Single Repository, and RPM via the toggle  
@@ -38,19 +38,23 @@ CVE ID MUST match `^CVE-[0-9]{4}-[0-9]{4,19}$` when validation runs for that fie
 - **THEN** CVE shows the format message and submission is blocked until resolved.
 
 ### Requirement: Keyboard Enter on modal text fields
-For **every** modal **PatternFly TextInput** (CVE ID, Source Repository, Commit ID, **Package NVR when RPM mode is active**, Authentication secret, Username), pressing **`Enter`** while focused SHALL **`preventDefault`** and SHALL invoke the **identical client validation/update paths** implemented for **`blur`** on that same field—including CVE format, Source Repo URL checks, RPM NVR parsing/validation **when RPM mode is active**, credential required/PAT username checks. **Excluded from this requirement:** **`FileUpload`**, **`ToggleGroup` / mode chooser**, **`Switch`**, **Architecture `Select`/dropdown**, other non-text controls. Fields with **no** blur validation rule today only receive **`preventDefault`** (currently **Commit ID**).
+For **every** modal **PatternFly TextInput** (CVE ID, Source Repository, Commit ID, **Manifest path when Single Repository Advanced is expanded**, **Package NVR when RPM mode is active**, Authentication secret, Username), pressing **`Enter`** while focused SHALL **`preventDefault`** and SHALL invoke the **identical client validation/update paths** implemented for **`blur`** on that same field—including CVE format, Source Repo URL checks, RPM NVR parsing/validation **when RPM mode is active**, credential required/PAT username checks. **Excluded:** **`FileUpload`**, **`ToggleGroup`**, **`Switch`**, **`ExpandableSection`**, **Architecture** and **Programming language** selects. Fields with no blur rule only receive **`preventDefault`** (**Commit ID**, **Manifest path**).
 
 #### Scenario: Enter matches blur for all modal TextInputs
-- **WHEN** focus is in any CVE, Source Repo, Commit ID, Package NVR (RPM mode), Authentication secret, or Username TextInput listed above  
-- **AND** the user presses Enter  
-- **THEN** Enter is intercepted (no unintended control action) AND each field behaves exactly as documented for blur for **that field** wherever blur rules exist; Commit ID invokes only interception.
+- **WHEN** focus is in any listed TextInput above
+- **AND** the user presses Enter
+- **THEN** Enter is intercepted and blur rules apply where defined; Commit ID and Manifest path intercept only.
 
 ### Requirement: Errors, loading, generic failures
-Editing a control clears **that field’s** error. Non-validation API failures (e.g. 429/500/network) ⇒ Alert; modal open; form preserved; submit re-enabled. While submit in-flight: duplicate submit prevented; disabling rules from private repo loading still apply (see sibling specs); cancel remains usable unless product rules say otherwise.
+Editing a control SHALL clear **that field’s** error. Non-validation API failures (e.g. 429/500/network) SHALL show an Alert; modal SHALL stay open with form preserved and submit re-enabled. While submit is in-flight, duplicate submit SHALL be prevented; private-repo disabling rules still apply; cancel SHALL remain usable unless product rules say otherwise.
 
 #### Scenario: Preserve form after non-field API error  
 - **WHEN** client validation passes and the API fails without field mapping  
 - **THEN** Alert shows a message; form values remain; loading ends.
 
 ### Requirement: Submit button
-Submit enabled if not submitting, mode-specific required inputs satisfied ([SBOM](../request-analysis-modal-sbom/spec.md) / [Single Repository](../request-analysis-modal-single-repository/spec.md) / [**RPM fields**](../request-analysis-modal-rpm-fields/spec.md)), and not blocked by Private repository empty secret rule when the active mode is **SBOM** or **Single Repository**.
+Submit SHALL be enabled when not submitting, mode-specific required inputs are satisfied ([SBOM](../request-analysis-modal-sbom/spec.md) / [Single Repository](../request-analysis-modal-single-repository/spec.md) / [**RPM fields**](../request-analysis-modal-rpm-fields/spec.md)), and not blocked by Private repository empty secret when mode is **SBOM** or **Single Repository**.
+
+#### Scenario: Submit disabled while in-flight
+- **WHEN** a submission is in progress
+- **THEN** Submit is disabled until the request completes.
