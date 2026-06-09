@@ -39,6 +39,39 @@ export function validateSourceRepoUrl(value: string): string | null {
   }
 }
 
+/** Windows drive-letter absolute path prefix (e.g. C:\ or C:/) */
+const MANIFEST_PATH_WINDOWS_ABSOLUTE = /^[A-Za-z]:[/\\]/;
+
+/**
+ * Validates manifest path as a relative path within the cloned repository.
+ * Rejects absolute paths, backslashes, parent-directory segments, and null bytes.
+ * @returns Error message if invalid, null if valid or empty (empty is optional on submit)
+ */
+export function validateManifestPath(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed === "") {
+    return null;
+  }
+  if (trimmed.startsWith("/")) {
+    return "Manifest path must be a relative path within the repository";
+  }
+  if (MANIFEST_PATH_WINDOWS_ABSOLUTE.test(trimmed)) {
+    return "Manifest path must be a relative path within the repository";
+  }
+  if (trimmed.includes("\\")) {
+    return "Manifest path must use forward slashes only";
+  }
+  if (trimmed.includes("\0")) {
+    return "Manifest path contains invalid characters";
+  }
+  for (const segment of trimmed.split("/")) {
+    if (segment === "..") {
+      return "Manifest path must not contain parent directory references (..)";
+    }
+  }
+  return null;
+}
+
 /**
  * Auto-detects credential type based on content (matches backend InlineCredential.detectType()).
  */

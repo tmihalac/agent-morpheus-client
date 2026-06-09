@@ -13,6 +13,7 @@ import type { SbomValidationIssueEntry } from "../utils/errorHandling";
 import {
   validateCveIdFormat,
   validateSourceRepoUrl,
+  validateManifestPath,
   detectCredentialType,
 } from "../utils/requestAnalysisValidation";
 import {
@@ -68,7 +69,7 @@ export interface AnalysisRequestStoredValues extends AnalysisRequestFormValues {
 
 /**
  * Text inputs controlled via `handlers.onTextChange` / `onTextBlur` / `onTextKeyDown`.
- * Blur/`applyTextBlurValidation`: `commitId` no-ops (validated on submit only).
+ * Blur/`applyTextBlurValidation`: `commitId` no-ops (validated on submit only); `manifestPath` validated on blur when non-empty.
  */
 export type AnalysisRequestFormTextField = keyof Pick<
   AnalysisRequestStoredValues,
@@ -174,6 +175,13 @@ function getClientValidationErrors(s: AnalysisRequestStoredValues): Partial<Anal
     }
     if (s.commitId.trim() === "") {
       errors.commitId = VALIDATION_MESSAGE_REQUIRED;
+    }
+    const trimmedManifestPath = s.manifestPath.trim();
+    if (trimmedManifestPath !== "") {
+      const manifestPathError = validateManifestPath(trimmedManifestPath);
+      if (manifestPathError) {
+        errors.manifestPath = manifestPathError;
+      }
     }
   } else if (s.mode === "rpm") {
     const pkg = s.rpmPackageNvr.trim();
@@ -402,7 +410,18 @@ export function useAnalysisRequestForm({
     (field: AnalysisRequestFormTextField) => {
       switch (field) {
         case "commitId":
+          break;
         case "manifestPath":
+          setValues((v) => {
+            const trimmed = v.manifestPath.trim();
+            if (trimmed !== "") {
+              setErrors((e) => ({
+                ...e,
+                manifestPath: validateManifestPath(trimmed),
+              }));
+            }
+            return v;
+          });
           break;
         case "cveId":
           flushCveIdFormatValidation();

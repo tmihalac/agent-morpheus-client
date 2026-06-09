@@ -7,9 +7,7 @@ Mode-specific behaviors are specified in sibling capabilities: **[SBOM](../reque
 
 ## Implementation (non-normative)
 Modal UI: `src/main/webui/src/components/request-analysis/`. Logic: `useAnalysisRequestForm.ts`; helpers: `requestAnalysisValidation.ts`, `requestAnalysisRpm.ts`, `requestAnalysisSbom.ts`, `requestAnalysisSubmit.ts`.
-
 ## Requirements
-
 ### Requirement: Mode selector and shared layout
 The modal SHALL expose **SBOM**, **Single Repository**, and **RPM** via PatternFly `ToggleGroup`/`ToggleGroupItem` ("SBOM", "Single Repository", "RPM"), exactly one selected, meaningful `aria-label`, SBOM selected by default. Switching modes SHALL clear generic Alert errors and **all** field-specific errors **except `cveId`**. CVE ID SHALL always appear. Private repository controls SHALL follow **Private Repository Authentication** (including visibility rules when **RPM** is selected). SBOM mode shows file upload only; Single Repository shows Source Repo, Commit ID, Private repository, then collapsible **Advanced** per **[Single Repository](../request-analysis-modal-single-repository/spec.md)**; RPM mode shows Package NVR + Architecture only per **[RPM fields](../request-analysis-modal-rpm-fields/spec.md)**.
 
@@ -28,7 +26,7 @@ When the selected analysis mode is **RPM**, private-repository credential contro
 #### Scenario: RPM mode suppresses private repository UI
 - **WHEN** the selected mode is **RPM**  
 - **THEN** private-repository switch, secret, username controls, and their labels are not shown  
-- **AND** submit eligibility does not depend on private-repository credential state  
+- **AND** submit eligibility does not depend on private-repository credential state
 
 ### Requirement: CVE ID validation
 CVE ID MUST match `^CVE-[0-9]{4}-[0-9]{4,19}$` when validation runs for that field (including **blur** and **submit**). Invalid format ⇒ message explaining expected pattern ("CVE-YYYY…"). Empty required ⇒ *Required* on submit (aligned with tab specs).
@@ -38,12 +36,12 @@ CVE ID MUST match `^CVE-[0-9]{4}-[0-9]{4,19}$` when validation runs for that fie
 - **THEN** CVE shows the format message and submission is blocked until resolved.
 
 ### Requirement: Keyboard Enter on modal text fields
-For **every** modal **PatternFly TextInput** (CVE ID, Source Repository, Commit ID, **Manifest path when Single Repository Advanced is expanded**, **Package NVR when RPM mode is active**, Authentication secret, Username), pressing **`Enter`** while focused SHALL **`preventDefault`** and SHALL invoke the **identical client validation/update paths** implemented for **`blur`** on that same field—including CVE format, Source Repo URL checks, RPM NVR parsing/validation **when RPM mode is active**, credential required/PAT username checks. **Excluded:** **`FileUpload`**, **`ToggleGroup`**, **`Switch`**, **`ExpandableSection`**, **Architecture** and **Programming language** selects. Fields with no blur rule only receive **`preventDefault`** (**Commit ID**, **Manifest path**).
+For **every** modal **PatternFly TextInput** (CVE ID, Source Repository, Commit ID, **Manifest path when Single Repository Advanced is expanded**, **Package NVR when RPM mode is active**, Authentication secret, Username), pressing **`Enter`** while focused SHALL **`preventDefault`** and SHALL invoke the **identical client validation/update paths** implemented for **`blur`** on that same field—including CVE format, Source Repo URL checks, **Manifest path security validation when Single Repository Advanced is expanded**, RPM NVR parsing/validation **when RPM mode is active**, credential required/PAT username checks. **Excluded:** **`FileUpload`**, **`ToggleGroup`**, **`Switch`**, **`ExpandableSection`**, **Architecture** and **Programming language** selects. Fields with no blur rule only receive **`preventDefault`** (**Commit ID**).
 
 #### Scenario: Enter matches blur for all modal TextInputs
 - **WHEN** focus is in any listed TextInput above
 - **AND** the user presses Enter
-- **THEN** Enter is intercepted and blur rules apply where defined; Commit ID and Manifest path intercept only.
+- **THEN** Enter is intercepted and blur rules apply where defined; Commit ID intercepts only.
 
 ### Requirement: Errors, loading, generic failures
 Editing a control SHALL clear **that field’s** error. Non-validation API failures (e.g. 429/500/network) SHALL show an Alert; modal SHALL stay open with form preserved and submit re-enabled. While submit is in-flight, duplicate submit SHALL be prevented; private-repo disabling rules still apply; cancel SHALL remain usable unless product rules say otherwise.
