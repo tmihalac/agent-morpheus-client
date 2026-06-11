@@ -22,7 +22,14 @@ export interface RequestAnalysisSingleRepositoryFieldsProps {
 
 const RequestAnalysisSingleRepositoryFields: React.FC<
   RequestAnalysisSingleRepositoryFieldsProps
-> = ({ sourceRepo, sourceRepoError, commitId, commitIdError, isSubmitting, handlers }) => (
+> = ({
+  sourceRepo,
+  sourceRepoError,
+  commitId,
+  commitIdError,
+  isSubmitting,
+  handlers,
+}) => (
   <>
     <FormGroup label="Source Repository" isRequired fieldId="source-repo">
       <TextInput

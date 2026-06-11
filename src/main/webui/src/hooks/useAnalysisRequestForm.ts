@@ -13,6 +13,7 @@ import type { SbomValidationIssueEntry } from "../utils/errorHandling";
 import {
   validateCveIdFormat,
   validateSourceRepoUrl,
+  validateManifestPath,
   detectCredentialType,
 } from "../utils/requestAnalysisValidation";
 import {
@@ -29,6 +30,10 @@ import {
   unsupportedSbomFormatMessage,
 } from "../utils/requestAnalysisSbom";
 import { buildSbomFormData, uploadSbomFile } from "../utils/requestAnalysisSubmit";
+import {
+  isSourceEcosystemChoice,
+  SOURCE_ECOSYSTEM_UNSET,
+} from "../utils/requestAnalysisSource";
 
 const FALLBACK_ERROR_MESSAGE = "An error occurred while submitting the analysis request.";
 
@@ -49,6 +54,9 @@ export interface AnalysisRequestFormValues {
   commitId: string;
   rpmPackageNvr: string;
   rpmArch: RpmArchChoice;
+  isAdvancedExpanded: boolean;
+  manifestPath: string;
+  ecosystem: string;
   isAuthenticationSecretChecked: boolean;
   authenticationSecret: string;
   username: string;
@@ -61,11 +69,17 @@ export interface AnalysisRequestStoredValues extends AnalysisRequestFormValues {
 
 /**
  * Text inputs controlled via `handlers.onTextChange` / `onTextBlur` / `onTextKeyDown`.
- * Blur/`applyTextBlurValidation`: `commitId` no-ops (validated on submit only).
+ * Blur/`applyTextBlurValidation`: `commitId` no-ops (validated on submit only); `manifestPath` validated on blur when non-empty.
  */
 export type AnalysisRequestFormTextField = keyof Pick<
   AnalysisRequestStoredValues,
-  "cveId" | "sourceRepo" | "commitId" | "rpmPackageNvr" | "authenticationSecret" | "username"
+  | "cveId"
+  | "sourceRepo"
+  | "commitId"
+  | "manifestPath"
+  | "rpmPackageNvr"
+  | "authenticationSecret"
+  | "username"
 >;
 
 export interface AnalysisRequestFormErrors {
@@ -74,6 +88,8 @@ export interface AnalysisRequestFormErrors {
   file: string | null;
   sourceRepo: string | null;
   commitId: string | null;
+  manifestPath: string | null;
+  ecosystem: string | null;
   rpmPackageNvr: string | null;
   rpmArch: string | null;
   authenticationSecret: string | null;
@@ -98,6 +114,8 @@ function createInitialFormErrors(): AnalysisRequestFormErrors {
     file: null,
     sourceRepo: null,
     commitId: null,
+    manifestPath: null,
+    ecosystem: null,
     rpmPackageNvr: null,
     rpmArch: null,
     authenticationSecret: null,
@@ -118,6 +136,9 @@ function createInitialStoredValues(): AnalysisRequestStoredValues {
     selectedFile: null,
     sourceRepo: "",
     commitId: "",
+    isAdvancedExpanded: false,
+    manifestPath: "",
+    ecosystem: SOURCE_ECOSYSTEM_UNSET,
     rpmPackageNvr: "",
     rpmArch: DEFAULT_RPM_ARCH,
     isAuthenticationSecretChecked: false,
@@ -154,6 +175,13 @@ function getClientValidationErrors(s: AnalysisRequestStoredValues): Partial<Anal
     }
     if (s.commitId.trim() === "") {
       errors.commitId = VALIDATION_MESSAGE_REQUIRED;
+    }
+    const trimmedManifestPath = s.manifestPath.trim();
+    if (trimmedManifestPath !== "") {
+      const manifestPathError = validateManifestPath(trimmedManifestPath);
+      if (manifestPathError) {
+        errors.manifestPath = manifestPathError;
+      }
     }
   } else if (s.mode === "rpm") {
     const pkg = s.rpmPackageNvr.trim();
@@ -218,6 +246,8 @@ export interface AnalysisRequestFormHandlers {
     event: React.KeyboardEvent<HTMLInputElement>
   ) => void;
   onRpmArchChange: (event: React.FormEvent<HTMLSelectElement>, value: string) => void;
+  onAdvancedToggle: (_event: React.MouseEvent, isExpanded: boolean) => void;
+  onEcosystemChange: (event: React.FormEvent<HTMLSelectElement>, value: string) => void;
   onPrivateRepoSwitch: (_event: React.FormEvent<HTMLInputElement>, checked: boolean) => void;
   onFileInputChange: (_event: DropEvent, file: File) => void;
   onClearFile: (_event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
@@ -260,6 +290,12 @@ export type AnalysisRequestFormModeHandlers = Pick<AnalysisRequestFormHandlers, 
 /** Handlers for RPM architecture `FormSelect`. */
 export type AnalysisRequestFormRpmArchHandlers = Pick<AnalysisRequestFormHandlers, "onRpmArchChange">;
 
+/** Handlers for single-repository Advanced section (manifest path, ecosystem). */
+export type AnalysisRequestFormSingleRepoAdvancedHandlers = Pick<
+  AnalysisRequestFormHandlers,
+  "onAdvancedToggle" | "onTextChange" | "onTextKeyDown" | "onEcosystemChange"
+>;
+
 export interface UseAnalysisRequestFormResult {
   values: AnalysisRequestFormValues;
   state: AnalysisRequestFormStateSlice;
@@ -286,15 +322,23 @@ export function useAnalysisRequestForm({
     }));
     setValues((prev) => {
       const nextMode = newMode;
+      let next: AnalysisRequestStoredValues = { ...prev, mode: nextMode };
       if (nextMode === "rpm" || prev.mode === "rpm") {
-        return {
-          ...prev,
-          mode: nextMode,
+        next = {
+          ...next,
           rpmPackageNvr: "",
           rpmArch: DEFAULT_RPM_ARCH,
         };
       }
-      return { ...prev, mode: nextMode };
+      if (nextMode === "single-repository" || prev.mode === "single-repository") {
+        next = {
+          ...next,
+          isAdvancedExpanded: false,
+          manifestPath: "",
+          ecosystem: SOURCE_ECOSYSTEM_UNSET,
+        };
+      }
+      return next;
     });
   }, []);
 
@@ -308,6 +352,8 @@ export function useAnalysisRequestForm({
       file: fieldErrors.file ?? null,
       sourceRepo: fieldErrors.sourceRepo ?? null,
       commitId: fieldErrors.commitId ?? null,
+      manifestPath: fieldErrors.manifestPath ?? fieldErrors.manifest_path ?? null,
+      ecosystem: fieldErrors.ecosystem ?? null,
       rpmPackageNvr: rpmCombined ?? null,
       rpmArch: fieldErrors.arch ?? null,
       sbomValidationIssues: issues && issues.length > 0 ? issues : null,
@@ -345,10 +391,37 @@ export function useAnalysisRequestForm({
     []
   );
 
+  const onAdvancedToggle = useCallback((_event: React.MouseEvent, isExpanded: boolean) => {
+    setValues((prev) => ({ ...prev, isAdvancedExpanded: isExpanded }));
+  }, []);
+
+  const onEcosystemChange = useCallback(
+    (_event: React.FormEvent<HTMLSelectElement>, value: string) => {
+      if (value !== SOURCE_ECOSYSTEM_UNSET && !isSourceEcosystemChoice(value)) {
+        return;
+      }
+      setValues((prev) => ({ ...prev, ecosystem: value }));
+      setErrors((prev) => (prev.ecosystem ? { ...prev, ecosystem: null } : prev));
+    },
+    []
+  );
+
   const applyTextBlurValidation = useCallback(
     (field: AnalysisRequestFormTextField) => {
       switch (field) {
         case "commitId":
+          break;
+        case "manifestPath":
+          setValues((v) => {
+            const trimmed = v.manifestPath.trim();
+            if (trimmed !== "") {
+              setErrors((e) => ({
+                ...e,
+                manifestPath: validateManifestPath(trimmed),
+              }));
+            }
+            return v;
+          });
           break;
         case "cveId":
           flushCveIdFormatValidation();
@@ -473,6 +546,8 @@ export function useAnalysisRequestForm({
       setState({ isSubmitting: true });
       try {
         const credential = getCredentialForSubmit(values);
+        const trimmedManifestPath = values.manifestPath.trim();
+        const trimmedEcosystem = values.ecosystem.trim();
         const requestBody: ReportRequest = {
           analysisType: "source",
           vulnerabilities: [trimmedCveId],
@@ -480,6 +555,8 @@ export function useAnalysisRequestForm({
           sourceRepo: values.sourceRepo.trim(),
           commitId: values.commitId.trim(),
           credential,
+          ...(trimmedManifestPath !== "" ? { manifestPath: trimmedManifestPath } : {}),
+          ...(trimmedEcosystem !== "" ? { ecosystem: trimmedEcosystem } : {}),
         };
         const response: ReportData = await ReportEndpointService.postApiV1ReportsNew({
           requestBody,
@@ -589,6 +666,8 @@ export function useAnalysisRequestForm({
       onTextBlur,
       onTextKeyDown,
       onRpmArchChange,
+      onAdvancedToggle,
+      onEcosystemChange,
       onPrivateRepoSwitch,
       onFileInputChange,
       onClearFile,
@@ -600,6 +679,8 @@ export function useAnalysisRequestForm({
       onTextBlur,
       onTextKeyDown,
       onRpmArchChange,
+      onAdvancedToggle,
+      onEcosystemChange,
       onPrivateRepoSwitch,
       onFileInputChange,
       onClearFile,
