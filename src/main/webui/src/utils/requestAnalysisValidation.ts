@@ -39,7 +39,11 @@ export function validateSourceRepoUrl(value: string): string | null {
   }
 }
 
-/** Windows drive-letter absolute path prefix (e.g. C:\ or C:/) */
+/**
+ * Windows drive-letter absolute path prefix (e.g. C:\ or C:/).
+ * Rejected as invalid input for the Linux agent container—not a path-traversal
+ * mitigation; such paths cannot resolve to files inside the cloned repository.
+ */
 const MANIFEST_PATH_WINDOWS_ABSOLUTE = /^[A-Za-z]:[/\\]/;
 
 /**
