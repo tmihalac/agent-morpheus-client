@@ -19,7 +19,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import com.redhat.ecosystemappeng.morpheus.model.McpClientRegistration;
 import com.redhat.ecosystemappeng.morpheus.model.PaginatedResult;
-import com.redhat.ecosystemappeng.morpheus.service.McpClientAlreadyExistsException;
+import com.redhat.ecosystemappeng.morpheus.exception.McpClientAlreadyExistsException;
 import com.redhat.ecosystemappeng.morpheus.service.McpClientService;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -62,8 +62,12 @@ public class McpClientEndpoint {
 
     private static final Logger LOGGER = Logger.getLogger(McpClientEndpoint.class);
 
+    private final McpClientService mcpClientService;
+
     @Inject
-    McpClientService mcpClientService;
+    public McpClientEndpoint(McpClientService mcpClientService) {
+        this.mcpClientService = mcpClientService;
+    }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)

@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @Singleton
@@ -44,20 +45,21 @@ public class McpClientRepositoryService {
     private static final String COLLECTION_NAME = "mcp_clients";
     private static final String CLIENT_ID_FIELD = "client_id";
     private static final String REGISTERED_AT_FIELD = "registered_at";
-    private static final long CLIENT_TTL_SECONDS = 30L * 24 * 60 * 60; // 30 days
-
     @Inject
     MongoClient mongoClient;
 
     @ConfigProperty(name = "quarkus.mongodb.database")
     String dbName;
 
+    @ConfigProperty(name = "exploitiq.mcp-clients.ttl-seconds", defaultValue = "2592000")
+    long clientTtlSeconds;
+
     @PostConstruct
     public void dbInit() {
         MongoCollection<Document> collection = getCollection();
         collection.createIndex(Indexes.ascending(CLIENT_ID_FIELD), new IndexOptions().unique(true));
         collection.createIndex(Indexes.ascending(REGISTERED_AT_FIELD),
-                new IndexOptions().expireAfter(CLIENT_TTL_SECONDS, TimeUnit.SECONDS));
+                new IndexOptions().expireAfter(clientTtlSeconds, TimeUnit.SECONDS));
         LOGGER.info("MCP clients collection initialized with unique and TTL indexes");
     }
 
@@ -102,7 +104,7 @@ public class McpClientRepositoryService {
     @SuppressWarnings("unchecked")
     private McpClientRegistration documentToRegistration(Document doc) {
         Date registeredAtDate = doc.getDate(REGISTERED_AT_FIELD);
-        String registeredAt = registeredAtDate != null ? registeredAtDate.toInstant().toString() : null;
+        String registeredAt = Objects.nonNull(registeredAtDate) ? registeredAtDate.toInstant().toString() : null;
         Map<String, Object> clientData = doc.get("client_data", Document.class);
         return new McpClientRegistration(
                 doc.getString(CLIENT_ID_FIELD),
@@ -110,7 +112,7 @@ public class McpClientRepositoryService {
                 doc.getList("redirect_uris", String.class, List.of()),
                 doc.getList("grant_types", String.class, List.of()),
                 registeredAt,
-                clientData != null ? clientData : Map.of()
+                Objects.nonNull(clientData) ? clientData : Map.of()
         );
     }
 

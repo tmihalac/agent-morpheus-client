@@ -18,6 +18,7 @@ import com.mongodb.ErrorCategory;
 import com.mongodb.MongoWriteException;
 import com.redhat.ecosystemappeng.morpheus.model.McpClientRegistration;
 import com.redhat.ecosystemappeng.morpheus.model.PaginatedResult;
+import com.redhat.ecosystemappeng.morpheus.exception.McpClientAlreadyExistsException;
 import com.redhat.ecosystemappeng.morpheus.repository.McpClientRepositoryService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -28,8 +29,12 @@ public class McpClientService {
 
     private static final Logger LOGGER = Logger.getLogger(McpClientService.class);
 
+    private final McpClientRepositoryService repository;
+
     @Inject
-    McpClientRepositoryService repository;
+    public McpClientService(McpClientRepositoryService repository) {
+        this.repository = repository;
+    }
 
     public McpClientRegistration register(McpClientRegistration registration) {
         LOGGER.infof("Registering MCP client: clientId=%s, clientName=%s",

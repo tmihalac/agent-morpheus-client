@@ -43,6 +43,6 @@ public record McpClientRegistration(
     @Schema(required = true, description = "Registration timestamp (ISO 8601)")
     String registeredAt,
     @NotNull
-    @Schema(required = true, description = "Full OAuth client information blob")
+    @Schema(required = true, description = "Full OAuth client information blob from MCP SDK DCR — contains redirect_uris, grant_types, token_endpoint_auth_method, scope, and other RFC 7591 client metadata (client_secret is stripped before persistence)")
     Map<String, Object> clientData
 ) {}

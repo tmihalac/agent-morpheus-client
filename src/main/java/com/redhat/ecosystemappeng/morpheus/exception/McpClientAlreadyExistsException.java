@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package com.redhat.ecosystemappeng.morpheus.service;
+package com.redhat.ecosystemappeng.morpheus.exception;
 
 public class McpClientAlreadyExistsException extends RuntimeException {
 
