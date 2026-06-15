@@ -76,7 +76,7 @@ public class McpClientRepositoryService {
 
     public McpClientRegistration findByClientId(String clientId) {
         Document doc = getCollection().find(Filters.eq(CLIENT_ID_FIELD, clientId)).first();
-        if (doc == null) {
+        if (Objects.isNull(doc)) {
             return null;
         }
         return documentToRegistration(doc);

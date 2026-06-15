@@ -36,6 +36,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.Objects;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -111,7 +112,7 @@ public class McpClientEndpoint {
     })
     public Response getByClientId(@PathParam("clientId") String clientId) {
         McpClientRegistration registration = mcpClientService.getByClientId(clientId);
-        if (registration == null) {
+        if (Objects.isNull(registration)) {
             throw new NotFoundException("Client not found: " + clientId);
         }
         return Response.ok(registration).build();

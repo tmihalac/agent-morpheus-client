@@ -18,12 +18,13 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
 import java.time.Instant;
+import java.util.Objects;
 
 public class ValidInstantValidator implements ConstraintValidator<ValidInstant, String> {
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-        if (value == null || value.isBlank()) {
+        if (Objects.isNull(value) || value.isBlank()) {
             return true;
         }
         try {
