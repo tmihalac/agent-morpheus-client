@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -86,6 +87,18 @@ public class ReportService {
   private static final String PACKAGE_TYPE_PROPERTY = "syft:package:type";
   private static final Pattern PURL_PKG_TYPE = Pattern.compile("pkg\\:(\\w+)\\/.*");
   public static final String HOSTED_GITHUB_COM = "github.com";
+
+  private static final Map<String, String> GHSA_TO_LANGUAGE = Map.of(
+      "MAVEN", "Java", "NPM", "JavaScript", "GO", "Go",
+      "PIP", "Python", "PYPI", "Python");
+
+  private static final Map<String, String> GHSA_TO_ECOSYSTEM = Map.of(
+      "MAVEN", "java", "NPM", "javascript", "GO", "go",
+      "PIP", "python", "PYPI", "python");
+
+  private static final Map<String, String> LANGUAGE_TO_ECOSYSTEM = Map.of(
+      "Java", "java", "JavaScript", "javascript", "TypeScript", "javascript",
+      "Go", "go", "Python", "python", "C", "c", "C++", "c");
 
   @RestClient
   GitHubService gitHubService;
@@ -483,23 +496,39 @@ public class ReportService {
       commitId = request.commitId();
     }
     Set<String> languages;
-    if (sourceLocation.contains(HOSTED_GITHUB_COM)) {
-      var credential = request.credential();
-      if (Objects.nonNull(credential) && Objects.nonNull(credential.userName())) {
-        languages = getGitHubLanguages(sourceLocation, "Bearer " + credential.secretValue());
-      } else if(!globalGithubApiKey.isEmpty()){
-        languages = getGitHubLanguages(sourceLocation, "Bearer " + globalGithubApiKey.trim());
-      }
-      else {
-        languages = getGitHubLanguages(sourceLocation);
-      }
-      if (languages.isEmpty() && Objects.nonNull(request.ecosystem()) && !request.ecosystem().trim().isEmpty()) {
-        LOGGER.infof("No languages detected from GitHub for %s, using ecosystem: %s", sourceLocation, request.ecosystem());
-        languages = buildLanguagesExtensions(request.ecosystem());
-      }
-    }
-    else {
+    if (Objects.nonNull(request.ecosystem()) && !request.ecosystem().trim().isEmpty()) {
       languages = buildLanguagesExtensions(request.ecosystem());
+      LOGGER.infof("Using user-provided ecosystem for %s: %s", sourceLocation, request.ecosystem());
+    } else {
+      var ghsaResult = getEcosystemFromGhsa(request.vulnerabilities());
+      if (!ghsaResult.languages().isEmpty()) {
+        languages = ghsaResult.languages();
+        ecosystem = ghsaResult.pipelineEcosystem() != null ? ghsaResult.pipelineEcosystem() : ecosystem;
+        LOGGER.infof("Detected ecosystem from GHSA for %s: %s", sourceLocation, ecosystem);
+      } else if (sourceLocation.contains(HOSTED_GITHUB_COM)) {
+        var credential = request.credential();
+        Map<String, Integer> langMap;
+        if (Objects.nonNull(credential) && Objects.nonNull(credential.userName())) {
+          langMap = getGitHubLanguages(sourceLocation, "Bearer " + credential.secretValue());
+        } else if (!globalGithubApiKey.isEmpty()) {
+          langMap = getGitHubLanguages(sourceLocation, "Bearer " + globalGithubApiKey.trim());
+        } else {
+          langMap = getGitHubLanguages(sourceLocation);
+        }
+        languages = langMap.keySet();
+        var dominantEcosystem = langMap.entrySet().stream()
+            .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+            .map(e -> LANGUAGE_TO_ECOSYSTEM.get(e.getKey()))
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElse(null);
+        if (dominantEcosystem != null) {
+          ecosystem = dominantEcosystem;
+          LOGGER.infof("Detected dominant ecosystem from GitHub Language API for %s: %s", sourceLocation, ecosystem);
+        }
+      } else {
+        languages = buildLanguagesExtensions("");
+      }
     }
 
     var allIncludes = languages.stream().map(includes::get).filter(Objects::nonNull).flatMap(Collection::stream)
@@ -631,23 +660,23 @@ public class ReportService {
     return null;
   }
 
-  private Set<String> getGitHubLanguages(String repository) {
+  private Map<String, Integer> getGitHubLanguages(String repository) {
     var repoName = repository.replace("https://github.com/", "");
     if (repoName.endsWith(".git")) {
       repoName = repoName.substring(0, repoName.length() - 4);
     }
     try {
       LOGGER.debugf("looking for programming languages for repository %s (using system token)", repoName);
-      return gitHubService.getLanguages(repoName).keySet();
+      return gitHubService.getLanguages(repoName);
     } catch (ClientWebApplicationException e) {
       int status = e.getResponse().getStatus();
       if (status == Response.Status.NOT_FOUND.getStatusCode()) {
         LOGGER.infof("Repository not found or is private (no user token provided): %s", repoName);
-        return Collections.emptySet();
+        return Collections.emptyMap();
       }
       if (status == Response.Status.UNAUTHORIZED.getStatusCode() || status == Response.Status.FORBIDDEN.getStatusCode()) {
         LOGGER.infof("Insufficient permissions to access repository: %s (status=%d)", repoName, status);
-        return Collections.emptySet();
+        return Collections.emptyMap();
       }
       LOGGER.error("Unable to retrieve programming languages", e);
       throw e;
@@ -657,18 +686,78 @@ public class ReportService {
     }
   }
 
-  private Set<String> getGitHubLanguages(String repository, String authorization) {
+  private Map<String, Integer> getGitHubLanguages(String repository, String authorization) {
     var repoName = repository.replace("https://github.com/", "");
     try {
       LOGGER.debugf("looking for programming languages for repository %s (with user token)", repoName);
-      return gitHubService.getLanguages(repoName, authorization).keySet();
+      return gitHubService.getLanguages(repoName, authorization);
     } catch (Exception e) {
       LOGGER.warnf(
           "Unable to retrieve programming languages for repository %s, falling back to all supported languages (%s)",
           repository,
           e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
-      return Collections.emptySet();
+      return Collections.emptyMap();
     }
+  }
+
+  private record GhsaEcosystemResult(Set<String> languages, String pipelineEcosystem) {
+    static final GhsaEcosystemResult EMPTY = new GhsaEcosystemResult(Collections.emptySet(), null);
+  }
+
+  private GhsaEcosystemResult getEcosystemFromGhsa(Collection<String> vulnIds) {
+    if (vulnIds == null || vulnIds.isEmpty()) {
+      return GhsaEcosystemResult.EMPTY;
+    }
+    for (String vulnId : vulnIds) {
+      try {
+        List<JsonNode> advisories;
+        if (vulnId.toUpperCase().startsWith("GHSA-")) {
+          advisories = globalGithubApiKey.isEmpty()
+              ? gitHubService.getAdvisoriesByGhsaId(vulnId)
+              : gitHubService.getAdvisoriesByGhsaId(vulnId, "Bearer " + globalGithubApiKey.trim());
+        } else {
+          advisories = globalGithubApiKey.isEmpty()
+              ? gitHubService.getAdvisories(vulnId)
+              : gitHubService.getAdvisories(vulnId, "Bearer " + globalGithubApiKey.trim());
+        }
+        if (advisories == null || advisories.isEmpty()) {
+          continue;
+        }
+        Set<String> languages = new HashSet<>();
+        String pipelineEcosystem = null;
+        for (JsonNode advisory : advisories) {
+          JsonNode vulnerabilities = advisory.get("vulnerabilities");
+          if (vulnerabilities == null || !vulnerabilities.isArray()) {
+            continue;
+          }
+          for (JsonNode vuln : vulnerabilities) {
+            JsonNode pkg = vuln.get("package");
+            if (pkg == null) {
+              continue;
+            }
+            JsonNode ecosystemNode = pkg.get("ecosystem");
+            if (ecosystemNode == null || ecosystemNode.isNull()) {
+              continue;
+            }
+            String ghsaEcosystem = ecosystemNode.asText().toUpperCase();
+            String lang = GHSA_TO_LANGUAGE.get(ghsaEcosystem);
+            if (lang != null) {
+              languages.add(lang);
+              if (pipelineEcosystem == null) {
+                pipelineEcosystem = GHSA_TO_ECOSYSTEM.get(ghsaEcosystem);
+              }
+            }
+          }
+        }
+        if (!languages.isEmpty()) {
+          return new GhsaEcosystemResult(languages, pipelineEcosystem);
+        }
+      } catch (Exception e) {
+        LOGGER.warnf("Unable to retrieve GHSA advisory for %s: %s", vulnId,
+            e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+      }
+    }
+    return GhsaEcosystemResult.EMPTY;
   }
 
   /**
