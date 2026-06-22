@@ -695,7 +695,7 @@ public class ReportService {
       LOGGER.warnf(
           "Unable to retrieve programming languages for repository %s, falling back to all supported languages (%s)",
           repository,
-          e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+          Objects.nonNull(e.getMessage()) ? e.getMessage() : e.getClass().getSimpleName());
       return Collections.emptyMap();
     }
   }
@@ -707,6 +707,9 @@ public class ReportService {
   private GhsaEcosystemResult getEcosystemFromGhsa(Collection<String> vulnIds) {
     if (Objects.isNull(vulnIds) || vulnIds.isEmpty()) {
       return GhsaEcosystemResult.EMPTY;
+    }
+    if (globalGithubApiKey.isEmpty()) {
+      LOGGER.warn("No GitHub API key configured; GHSA advisory lookups may be rate-limited");
     }
     for (String vulnId : vulnIds) {
       try {
