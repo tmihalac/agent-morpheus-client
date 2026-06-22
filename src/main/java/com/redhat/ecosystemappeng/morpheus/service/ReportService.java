@@ -503,7 +503,7 @@ public class ReportService {
       var ghsaResult = getEcosystemFromGhsa(request.vulnerabilities());
       if (!ghsaResult.languages().isEmpty()) {
         languages = ghsaResult.languages();
-        ecosystem = ghsaResult.pipelineEcosystem() != null ? ghsaResult.pipelineEcosystem() : ecosystem;
+        ecosystem = Objects.nonNull(ghsaResult.pipelineEcosystem()) ? ghsaResult.pipelineEcosystem() : ecosystem;
         LOGGER.infof("Detected ecosystem from GHSA for %s: %s", sourceLocation, ecosystem);
       } else if (sourceLocation.contains(HOSTED_GITHUB_COM)) {
         var credential = request.credential();
@@ -522,7 +522,7 @@ public class ReportService {
             .filter(Objects::nonNull)
             .findFirst()
             .orElse(null);
-        if (dominantEcosystem != null) {
+        if (Objects.nonNull(dominantEcosystem)) {
           ecosystem = dominantEcosystem;
           LOGGER.infof("Detected dominant ecosystem from GitHub Language API for %s: %s", sourceLocation, ecosystem);
         }
@@ -705,7 +705,7 @@ public class ReportService {
   }
 
   private GhsaEcosystemResult getEcosystemFromGhsa(Collection<String> vulnIds) {
-    if (vulnIds == null || vulnIds.isEmpty()) {
+    if (Objects.isNull(vulnIds) || vulnIds.isEmpty()) {
       return GhsaEcosystemResult.EMPTY;
     }
     for (String vulnId : vulnIds) {
@@ -720,30 +720,30 @@ public class ReportService {
               ? gitHubService.getAdvisories(vulnId)
               : gitHubService.getAdvisories(vulnId, "Bearer " + globalGithubApiKey.trim());
         }
-        if (advisories == null || advisories.isEmpty()) {
+        if (Objects.isNull(advisories) || advisories.isEmpty()) {
           continue;
         }
         Set<String> languages = new HashSet<>();
         String pipelineEcosystem = null;
         for (JsonNode advisory : advisories) {
           JsonNode vulnerabilities = advisory.get("vulnerabilities");
-          if (vulnerabilities == null || !vulnerabilities.isArray()) {
+          if (Objects.isNull(vulnerabilities) || !vulnerabilities.isArray()) {
             continue;
           }
           for (JsonNode vuln : vulnerabilities) {
             JsonNode pkg = vuln.get("package");
-            if (pkg == null) {
+            if (Objects.isNull(pkg)) {
               continue;
             }
             JsonNode ecosystemNode = pkg.get("ecosystem");
-            if (ecosystemNode == null || ecosystemNode.isNull()) {
+            if (Objects.isNull(ecosystemNode) || ecosystemNode.isNull()) {
               continue;
             }
             String ghsaEcosystem = ecosystemNode.asText().toUpperCase();
             String lang = GHSA_TO_LANGUAGE.get(ghsaEcosystem);
-            if (lang != null) {
+            if (Objects.nonNull(lang)) {
               languages.add(lang);
-              if (pipelineEcosystem == null) {
+              if (Objects.isNull(pipelineEcosystem)) {
                 pipelineEcosystem = GHSA_TO_ECOSYSTEM.get(ghsaEcosystem);
               }
             }
@@ -754,7 +754,7 @@ public class ReportService {
         }
       } catch (Exception e) {
         LOGGER.warnf("Unable to retrieve GHSA advisory for %s: %s", vulnId,
-            e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+            Objects.nonNull(e.getMessage()) ? e.getMessage() : e.getClass().getSimpleName());
       }
     }
     return GhsaEcosystemResult.EMPTY;
