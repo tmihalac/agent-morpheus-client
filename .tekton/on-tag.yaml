@@ -86,7 +86,7 @@ spec:
             - name: target-image
           steps:
             - name: format-image
-              image: registry.redhat.io/ubi9/ubi-minimal:9.4
+              image: registry.redhat.io/ubi10/ubi-minimal:1788941066
               script: |
                 #!/usr/bin/env bash
                 IMAGE="$(params.image_name):$(echo $(params.tag_name) | sed 's|refs/tags/||')"
