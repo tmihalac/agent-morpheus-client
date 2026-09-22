@@ -154,6 +154,30 @@
 
   <build>
     <plugins>
+      <!--
+        CVE-2026-87795, CVE-2026-87825, CVE-2026-87877, CVE-2026-87824,
+        CVE-2026-89046, CVE-2026-90560, CVE-2026-90852:
+        Override transitive zstd-jni in maven-jar-plugin -> plexus-archiver
+        to >= 1.5.7-14 (fixed version). Tracked by: TC-6173
+        (https://redhat.atlassian.net/browse/TC-6173).
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.4.2</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-archiver</artifactId>
+            <version>4.14.0</version>
+          </dependency>
+          <dependency>
+            <groupId>com.github.luben</groupId>
+            <artifactId>zstd-jni</artifactId>
+            <version>1.5.7-15</version>
+          </dependency>
+        </dependencies>
+      </plugin>
       <plugin>
         <groupId>${quarkus.platform.group-id}</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>
