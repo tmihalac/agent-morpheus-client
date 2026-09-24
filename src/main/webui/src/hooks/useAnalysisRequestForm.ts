@@ -60,7 +60,7 @@ export interface AnalysisRequestFormValues {
   manifestPath: string;
   ecosystem: string;
   isAuthenticationSecretChecked: boolean;
-  authenticationSecret: string;
+  authenticationInfo: string;
   username: string;
 }
 
@@ -80,7 +80,7 @@ export type AnalysisRequestFormTextField = keyof Pick<
   | "commitId"
   | "manifestPath"
   | "rpmPackageNvr"
-  | "authenticationSecret"
+  | "authenticationInfo"
   | "username"
 >;
 
@@ -144,7 +144,7 @@ function createInitialStoredValues(): AnalysisRequestStoredValues {
     rpmPackageNvr: "",
     rpmArch: DEFAULT_RPM_ARCH,
     isAuthenticationSecretChecked: false,
-    authenticationSecret: "",
+    authenticationInfo: "",
     username: "",
   };
 }
@@ -197,7 +197,7 @@ function getClientValidationErrors(s: AnalysisRequestStoredValues): Partial<Anal
   }
 
   if (s.mode !== "rpm" && s.isAuthenticationSecretChecked) {
-    const trimmedSecret = s.authenticationSecret.trim();
+    const trimmedSecret = s.authenticationInfo.trim();
     if (trimmedSecret === "") {
       errors.authenticationInfo = VALIDATION_MESSAGE_REQUIRED;
     } else {
@@ -215,10 +215,10 @@ function getClientValidationErrors(s: AnalysisRequestStoredValues): Partial<Anal
 }
 
 function getCredentialForSubmit(s: AnalysisRequestStoredValues): InlineCredential | undefined {
-  if (!s.isAuthenticationSecretChecked || !s.authenticationSecret.trim()) {
+  if (!s.isAuthenticationSecretChecked || !s.authenticationInfo.trim()) {
     return undefined;
   }
-  const secretValue = s.authenticationSecret.trim();
+  const secretValue = s.authenticationInfo.trim();
   const credentialType = detectCredentialType(secretValue);
   return {
     secretValue,
@@ -448,9 +448,9 @@ export function useAnalysisRequestForm({
             return v;
           });
           break;
-        case "authenticationSecret":
+        case "authenticationInfo":
           setValues((v) => {
-            const trimmedSecret = v.authenticationSecret.trim();
+            const trimmedSecret = v.authenticationInfo.trim();
             if (v.isAuthenticationSecretChecked && trimmedSecret === "") {
               setErrors((e) => ({
                 ...e,
@@ -462,7 +462,7 @@ export function useAnalysisRequestForm({
           break;
         case "username":
           setValues((v) => {
-            const credentialType = detectCredentialType(v.authenticationSecret);
+            const credentialType = detectCredentialType(v.authenticationInfo);
             if (credentialType === "PAT" && v.username.trim() === "") {
               setErrors((e) => ({
                 ...e,
@@ -508,7 +508,7 @@ export function useAnalysisRequestForm({
         setValues((prev) => ({
           ...prev,
           isAuthenticationSecretChecked: false,
-          authenticationSecret: "",
+          authenticationInfo: "",
           username: "",
         }));
         setErrors((prev) => ({
@@ -658,7 +658,7 @@ export function useAnalysisRequestForm({
         trimmedCveId,
         file,
         values.isAuthenticationSecretChecked,
-        values.authenticationSecret,
+        values.authenticationInfo,
         values.username
       );
       await uploadSbomFile(trimmedCveId, sbomFormat, formData, navigate, onClose);
@@ -673,7 +673,7 @@ export function useAnalysisRequestForm({
     state.isSubmitting ||
     (values.mode !== "rpm" &&
       values.isAuthenticationSecretChecked &&
-      values.authenticationSecret.trim() === "") ||
+      values.authenticationInfo.trim() === "") ||
     (values.mode === "rpm" &&
       (isCveIdAsPackageNvr(values.rpmPackageNvr) || errors.rpmPackageNvr !== null));
 
