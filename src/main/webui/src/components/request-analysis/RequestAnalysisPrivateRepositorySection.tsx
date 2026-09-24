@@ -77,9 +77,9 @@ const RequestAnalysisPrivateRepositorySection: React.FC<
                 id="authentication-secret"
                 name="authentication-secret"
                 value={authenticationSecret}
-                onChange={(e, v) => handlers.onTextChange("authenticationSecret", e, v)}
-                onBlur={() => handlers.onTextBlur("authenticationSecret")}
-                onKeyDown={(e) => handlers.onTextKeyDown("authenticationSecret", e)}
+                onChange={(e, v) => handlers.onTextChange("authenticationInfo", e, v)}
+                onBlur={() => handlers.onTextBlur("authenticationInfo")}
+                onKeyDown={(e) => handlers.onTextKeyDown("authenticationInfo", e)}
                 isDisabled={isSubmitting}
                 validated={authenticationSecretError ? "error" : "default"}
               />
