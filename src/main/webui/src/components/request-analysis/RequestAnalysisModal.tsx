@@ -107,7 +107,7 @@ const RequestAnalysisModal: React.FC<RequestAnalysisModalProps> = ({ onClose }) 
           {values.mode !== "rpm" && (
             <RequestAnalysisPrivateRepositorySection
               isAuthenticationSecretChecked={values.isAuthenticationSecretChecked}
-              authenticationSecret={values.authenticationSecret}
+              authenticationSecret={values.authenticationInfo}
               authenticationSecretError={errors.authenticationInfo}
               username={values.username}
               usernameError={errors.username}
