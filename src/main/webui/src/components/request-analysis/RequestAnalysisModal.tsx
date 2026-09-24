@@ -108,7 +108,7 @@ const RequestAnalysisModal: React.FC<RequestAnalysisModalProps> = ({ onClose }) 
             <RequestAnalysisPrivateRepositorySection
               isAuthenticationSecretChecked={values.isAuthenticationSecretChecked}
               authenticationSecret={values.authenticationSecret}
-              authenticationSecretError={errors.authenticationSecret}
+              authenticationSecretError={errors.authenticationInfo}
               username={values.username}
               usernameError={errors.username}
               isSubmitting={state.isSubmitting}

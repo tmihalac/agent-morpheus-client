@@ -94,7 +94,7 @@ export interface AnalysisRequestFormErrors {
   ecosystem: string | null;
   rpmPackageNvr: string | null;
   rpmArch: string | null;
-  authenticationSecret: string | null;
+  authenticationInfo: string | null;
   username: string | null;
   error: string | null;
   sbomValidationIssues: SbomValidationIssueEntry[] | null;
@@ -120,7 +120,7 @@ function createInitialFormErrors(): AnalysisRequestFormErrors {
     ecosystem: null,
     rpmPackageNvr: null,
     rpmArch: null,
-    authenticationSecret: null,
+    authenticationInfo: null,
     username: null,
     error: null,
     sbomValidationIssues: null,
@@ -199,7 +199,7 @@ function getClientValidationErrors(s: AnalysisRequestStoredValues): Partial<Anal
   if (s.mode !== "rpm" && s.isAuthenticationSecretChecked) {
     const trimmedSecret = s.authenticationSecret.trim();
     if (trimmedSecret === "") {
-      errors.authenticationSecret = VALIDATION_MESSAGE_REQUIRED;
+      errors.authenticationInfo = VALIDATION_MESSAGE_REQUIRED;
     } else {
       const credentialType = detectCredentialType(trimmedSecret);
       if (credentialType === "PAT") {
@@ -454,7 +454,7 @@ export function useAnalysisRequestForm({
             if (v.isAuthenticationSecretChecked && trimmedSecret === "") {
               setErrors((e) => ({
                 ...e,
-                authenticationSecret: VALIDATION_MESSAGE_REQUIRED,
+                authenticationInfo: VALIDATION_MESSAGE_REQUIRED,
               }));
             }
             return v;
@@ -513,7 +513,7 @@ export function useAnalysisRequestForm({
         }));
         setErrors((prev) => ({
           ...prev,
-          authenticationSecret: null,
+          authenticationInfo: null,
           username: null,
         }));
       } else {
