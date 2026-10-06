@@ -30,10 +30,9 @@ interface CvssBannerProps {
 }
 
 /**
- * Shared utility function to get CVSS severity, icon, and color from a numeric score
- * Can be used by both CvssBanner and other components
+ * Utility to get CVSS severity, icon, and color from a numeric score.
  */
-export function getCvssSeverityIconAndColor(score: number): {
+function getCvssSeverityIconAndColor(score: number): {
   severity: string;
   Icon: React.ComponentType<{ color?: string }> | null;
   color: string;

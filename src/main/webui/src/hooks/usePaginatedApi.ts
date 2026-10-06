@@ -17,7 +17,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { debounce } from 'lodash';
-import { useLiveUpdatesRevision } from '../contexts/LiveUpdatesContext';
+import { useLiveUpdatesRevision } from '../contexts/liveUpdates';
 import { OpenAPI } from '../generated-client/core/OpenAPI';
 import { getHeaders } from '../generated-client/core/request';
 import type { ApiRequestOptions } from '../generated-client/core/ApiRequestOptions';
@@ -28,21 +28,21 @@ const isDefined = <T>(value: T | null | undefined): value is Exclude<T, null | u
   return value !== undefined && value !== null;
 };
 
-const getQueryString = (params: Record<string, any>): string => {
+const getQueryString = (params: Record<string, unknown>): string => {
   const qs: string[] = [];
 
-  const append = (key: string, value: any) => {
+  const append = (key: string, value: unknown) => {
     qs.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`);
   };
 
-  const process = (key: string, value: any) => {
+  const process = (key: string, value: unknown) => {
     if (isDefined(value)) {
       if (Array.isArray(value)) {
         value.forEach(v => {
           process(key, v);
         });
       } else if (typeof value === 'object') {
-        Object.entries(value).forEach(([k, v]) => {
+        Object.entries(value as Record<string, unknown>).forEach(([k, v]) => {
           process(`${key}[${k}]`, v);
         });
       } else {

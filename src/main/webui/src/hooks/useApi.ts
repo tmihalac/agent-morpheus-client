@@ -18,7 +18,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import type { CancelablePromise } from "../generated-client";
-import { useLiveUpdatesRevision } from "../contexts/LiveUpdatesContext";
+import { useLiveUpdatesRevision } from "../contexts/liveUpdates";
 import { redirectToLoginIfUnauthorized } from "../utils/errorHandling";
 
 export interface UseApiResult<T> {

@@ -31,13 +31,11 @@ import {
 
 interface ReportCveStatusPieChartProps {
   product: ProductSummary;
-  cveId: string;
   cardHeight: string;
 }
 
 const ReportCveStatusPieChart: React.FC<ReportCveStatusPieChartProps> = ({
   product,
-  cveId,
   cardHeight,
 }) => {
   const chartData = useMemo(() => {
@@ -59,7 +57,7 @@ const ReportCveStatusPieChart: React.FC<ReportCveStatusPieChartProps> = ({
       { x: "not_vulnerable", y: notVulnerableCount },
       { x: "uncertain", y: uncertainCount },
     ];
-  }, [product, cveId]);
+  }, [product]);
 
   const computeColors = (slices: Array<{ x: string; y: number }>) => {
     const red = t_global_color_nonstatus_red_400.var;

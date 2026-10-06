@@ -25,7 +25,7 @@ import { FilterIcon } from "@patternfly/react-icons";
 import { AttributeSelector } from "./Filtering";
 import { PER_PAGE_OPTIONS } from "../constants/pagination";
 
-export interface ReportsToolbarFilters {}
+export type ReportsToolbarFilters = Record<string, never>;
 
 interface ReportsToolbarProps {
   searchValue?: string;

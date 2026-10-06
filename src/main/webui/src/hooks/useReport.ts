@@ -30,19 +30,22 @@ export interface UseReportResult {
  * @returns Object with data, loading, and error states
  */
 export function useReport(productId: string | undefined): UseReportResult {
-  if (!productId) {
-    return { data: null, loading: false, error: new Error("Product ID is required") };
-  }
-
+  // useApi must be called unconditionally to preserve hook call order (react-hooks/rules-of-hooks).
+  // When productId is missing, the apiCall rejects immediately so no request is issued.
   const { data, loading, error } = useApi<ProductSummary>(
-    () => request<ProductSummary>(OpenAPI, {
-      method: "GET",
-      url: `/api/v1/reports/product/${productId}`,
-      errors: {
-        404: "Product not found",
-        500: "Internal server error",
-      },
-    }),
+    () => {
+      if (!productId) {
+        return Promise.reject(new Error("Product ID is required"));
+      }
+      return request<ProductSummary>(OpenAPI, {
+        method: "GET",
+        url: `/api/v1/reports/product/${productId}`,
+        errors: {
+          404: "Product not found",
+          500: "Internal server error",
+        },
+      });
+    },
     {
       deps: [productId],
       liveUpdatesRefresh: true,
@@ -50,6 +53,13 @@ export function useReport(productId: string | undefined): UseReportResult {
         product !== null && shouldContinueLiveRefreshForProduct(product),
     }
   );
+
+  // Preserve the pre-fix synchronous result for a missing productId (loading:false,
+  // immediate error) so callers that guard on `loading` before `productId` don't flash
+  // a loading state. useApi above is still called unconditionally to keep hook order.
+  if (!productId) {
+    return { data: null, loading: false, error: new Error("Product ID is required") };
+  }
 
   return { data: data || null, loading, error };
 }

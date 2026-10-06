@@ -194,7 +194,7 @@ export function useReportsTableData(
   const sortDirectionApi = mapSortDirectionToApi(sortDirection);
 
   // Build query parameters
-  const queryParams: Record<string, any> = {
+  const queryParams: Record<string, unknown> = {
     page: page - 1, // API uses 0-based pagination
     pageSize: perPage,
     sortField,

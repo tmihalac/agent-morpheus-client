@@ -32,7 +32,7 @@ const getMockDelay = (request?: Request): number => {
           return delayMs;
         }
       }
-    } catch (e) {
+    } catch {
       // Ignore URL parsing errors
     }
   }
@@ -1142,7 +1142,12 @@ export const handlers = [
   // POST /api/v1/reports/new - Create new analysis request
   http.post("/api/v1/reports/new", async ({ request }) => {
     await delay(getMockDelay(request));
-    const body = (await request.json()) as any;
+    const body = (await request.json()) as Partial<{
+      productId: string;
+      imageName: string;
+      imageTag: string;
+      metadata: Record<string, unknown>;
+    }>;
 
     // Generate a new report ID
     const newReportId = `report-${Date.now()}`;

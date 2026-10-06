@@ -118,7 +118,7 @@ const ReportPage: React.FC = () => {
             <ReportComponentStatesPieChart product={data} cardHeight={REPORT_CARD_HEIGHT} />
           </GridItem>
           <GridItem span={6}>
-            <ReportCveStatusPieChart product={data} cveId={cveId} cardHeight={REPORT_CARD_HEIGHT} />
+            <ReportCveStatusPieChart product={data} cardHeight={REPORT_CARD_HEIGHT} />
           </GridItem>
         </Grid>
       </PageSection>

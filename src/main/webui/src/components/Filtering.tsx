@@ -25,12 +25,12 @@ import { FilterIcon } from "@patternfly/react-icons";
 /**
  * Hook for managing menu open/close state with keyboard and click outside handlers
  */
-export function useMenuHandlers(
+function useMenuHandlers(
   isMenuOpen: boolean,
   setIsMenuOpen: (open: boolean) => void,
-  menuRef: React.RefObject<HTMLDivElement>,
-  toggleRef: React.RefObject<HTMLButtonElement>,
-  containerRef?: React.RefObject<HTMLDivElement>
+  menuRef: React.RefObject<HTMLDivElement | null>,
+  toggleRef: React.RefObject<HTMLButtonElement | null>,
+  containerRef?: React.RefObject<HTMLDivElement | null>
 ) {
   useEffect(() => {
     const handleMenuKeys = (event: KeyboardEvent) => {
@@ -105,7 +105,9 @@ export function AttributeSelector<T extends string>({
         const firstElement = attributeMenuRef.current.querySelector(
           "li > button:not(:disabled)"
         );
-        firstElement && (firstElement as HTMLElement).focus();
+        if (firstElement) {
+          (firstElement as HTMLElement).focus();
+        }
       }
     }, 0);
     setIsAttributeMenuOpen((prev) => !prev);
