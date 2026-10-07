@@ -23,7 +23,7 @@ ExploitIQ supports multiple authentication modes via Quarkus profiles:
 | Profile | Use Case | Identity Provider |
 |---------|----------|-------------------|
 | `prod` | OpenShift | OpenShift OAuth |
-| `external-idp` | External identity providers | Keycloak, AWS Cognito, Google, Azure AD, Okta |
+| `external-idp` | External identity providers | Keycloak, AWS Cognito, Azure Entra ID, Google, Okta |
 | `dev` | Local development | Keycloak DevServices (OIDC off by default) |
 
 No Cognito-specific Quarkus profile is required. Point the existing `external-idp` profile at a Cognito User Pool (discovery, hybrid app type, and access-token role source already fit Cognito).
@@ -315,13 +315,118 @@ Expect **200** when scope mapping is configured on the client. Without `EXPLOITI
 
 **Note:** Implementing Cognito token fetch in the Python agent (`AUTH_TYPE=cognito`, `COGNITO_DOMAIN`, etc.) is outside this repository.
 
+### Azure Entra ID
+
+Use the `external-idp` profile with an Azure Entra ID (formerly Azure AD) tenant for browser login and agent M2M bearer tokens.
+
+Entra differs from Keycloak and Cognito in important ways:
+
+| Topic | Entra behavior |
+|-------|----------------|
+| Human roles | JWT top-level `roles` claim (app-role values must match ExploitIQ roles exactly) |
+| M2M tokens | `client_credentials` (app-only) tokens have **no** `scope`/`scp` claim; app roles are in the top-level `roles` claim |
+| Group names | The `groups` claim holds group **object IDs (GUIDs)**, not names — not usable for role mapping; use app roles |
+| Token endpoint | `https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token` |
+| M2M scope | Must be `{app-id-uri}/.default` (Entra rejects arbitrary scopes for `client_credentials`) |
+| Browser scopes | `openid`, `profile`, `email` |
+
+Role extraction is implemented in `RoleMappingAugmentor` (additive alongside OpenShift `groups`, Keycloak `realm_access`/`resource_access`, and Cognito `cognito:groups`/`scope`). The Entra `roles` check is a no-op when the claim is absent, so the other providers are unaffected. Standard Keycloak tokens place roles under `realm_access`/`resource_access`, not the top-level `roles` claim, so there is no collision in the supported configurations. Do **not** set `quarkus.oidc.roles.role-claim-path=roles` on the shared `external-idp` profile — role extraction is handled by the augmentor across all providers.
+
+#### Entra prerequisites (Azure Portal)
+
+1. **Tenant** (directory) in Entra ID.
+2. **App registration** for the resource API (the webapp audience):
+   - Expose an API with an **Application ID URI**, e.g. `api://<app-id>`.
+   - **Set `requestedAccessTokenVersion: 2`** in the app **Manifest** (Entra admin center → App registration → Manifest; the portal label is "Accepted token version" = v2). This is **required**: with the default (v1) Entra issues access tokens whose `iss` is `https://sts.windows.net/{tenantid}/`, which does **not** match the webapp's discovered v2 issuer `https://login.microsoftonline.com/{tenantid}/v2.0`, so the callback is rejected with **401** before role mapping runs.
+   - Define **App roles** (type: both, or application for M2M-only) whose **values** match ExploitIQ roles exactly:
+     - `exploit-iq-admin`
+     - `exploit-iq-view`
+     - `exploit-iq-prodsec`
+     - optionally `exploitiq-api-access` (for the agent M2M caller)
+3. **App registration** for the web UI client (confidential / client secret):
+   - Redirect URI: your app origin, e.g. `http://localhost:8080`.
+   - OpenID scopes: `openid`, `email`, `profile`.
+4. **Assign app roles** to users (browser login) and to the agent's service principal (M2M).
+5. For **agent M2M**: grant the caller app the resource app's application permission (app role), and admin-consent it; the caller requests scope `{app-id-uri}/.default`.
+
+#### Environment variables (exploit-iq-client)
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `QUARKUS_PROFILE` | Use `external-idp` (locally prefer `dev,external-idp`) | `external-idp` or `dev,external-idp` |
+| `QUARKUS_OIDC_AUTH_SERVER_URL` | Entra **issuer** URL for the tenant, **not** `.../.well-known/openid-configuration` | `https://login.microsoftonline.com/{tenant}/v2.0` |
+| `QUARKUS_OIDC_CLIENT_ID` | Web UI app client ID | Entra portal → App registrations |
+| `QUARKUS_OIDC_CREDENTIALS_SECRET` | Web UI app client secret | Entra portal → Certificates & secrets |
+| `NAMESPACE` | Required for service-account role string expansion | OpenShift namespace, or `local-dev` locally |
+| `CREDENTIAL_ENCRYPTION_KEY` | 32-byte key for credential store (unrelated to Entra) | Deployment secret |
+
+Discover endpoints automatically via:
+
+`https://login.microsoftonline.com/{tenant}/v2.0/.well-known/openid-configuration`
+
+Quarkus appends `/.well-known/openid-configuration` itself — set `QUARKUS_OIDC_AUTH_SERVER_URL` to the issuer only.
+
+Unlike Cognito M2M, Entra authorization needs **no** `EXPLOITIQ_SECURITY_OIDC_SCOPE_ROLE_MAPPINGS`: app roles arrive directly in the `roles` claim with values that already match the target roles.
+
+#### Deployment example
+
+```yaml
+env:
+- name: QUARKUS_PROFILE
+  value: "external-idp"
+- name: QUARKUS_OIDC_AUTH_SERVER_URL
+  value: "https://login.microsoftonline.com/{tenant}/v2.0"
+- name: QUARKUS_OIDC_CLIENT_ID
+  valueFrom:
+    secretKeyRef:
+      name: entra-oidc
+      key: client-id
+- name: QUARKUS_OIDC_CREDENTIALS_SECRET
+  valueFrom:
+    secretKeyRef:
+      name: entra-oidc
+      key: client-secret
+```
+
+#### Verify browser roles (`roles`)
+
+1. Assign the user the `exploit-iq-admin` (or `view` / `prodsec`) app role in the resource app registration.
+2. After login, APIs should return **200** (not **403**).
+3. Quarkus logs should include: `Mapping user to role 'exploit-iq-admin' from source: Azure Entra ID App Role`.
+4. Optional: decode the **access** token and confirm a top-level `roles` array with those exact values.
+
+#### Agent / M2M bearer tokens (client side)
+
+Entra `client_credentials` (app-only) access tokens carry **no** `scope`/`scp` claim; the app roles granted to the caller's service principal appear in the top-level `roles` claim. The client authorizes them directly from that claim — no `scope`-role mapping is needed.
+
+Fetch a token (agent-side code lives in the vulnerability-analysis repo; this shows the Entra contract):
+
+```bash
+TENANT="{tenant-id}"
+CLIENT_ID="{m2m-app-client-id}"
+CLIENT_SECRET="{m2m-app-client-secret}"
+SCOPE="api://<app-id>/.default"
+
+TOKEN=$(curl -s -X POST "https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=client_credentials&client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&scope=${SCOPE}" \
+  | jq -r .access_token)
+
+curl -i -H "Authorization: Bearer ${TOKEN}" \
+  http://localhost:8080/api/v1/reports
+```
+
+Expect **200** when the caller's service principal is assigned an app role whose value is an allowed ExploitIQ role (e.g. `exploitiq-api-access`, listed in `exploitiq.security.service-account-roles`). Without an assigned app role the token may authenticate but fail authorization (**403**).
+
+**Note:** Implementing Entra token fetch in the Python agent (`AUTH_TYPE=entra`, `ENTRA_TENANT_ID`, etc.) is outside this repository.
+
 ### Other OIDC Providers
 
 The same `external-idp` approach works with other OIDC-compliant providers:
 
 | Provider | Auth Server URL |
 |----------|-----------------|
-| Azure AD | `https://login.microsoftonline.com/{tenant}/v2.0` |
+| Azure Entra ID | See [Azure Entra ID](#azure-entra-id) above |
 | Okta | `https://dev-xxxxx.okta.com/oauth2/default` |
 | Auth0 | `https://your-domain.auth0.com` |
 | AWS Cognito | See [AWS Cognito](#aws-cognito) above |
