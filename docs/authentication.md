@@ -330,7 +330,7 @@ Entra differs from Keycloak and Cognito in important ways:
 | M2M scope | Must be `{app-id-uri}/.default` (Entra rejects arbitrary scopes for `client_credentials`) |
 | Browser scopes | `openid`, `profile`, `email` |
 
-Role extraction is implemented in `RoleMappingAugmentor` (additive alongside OpenShift `groups`, Keycloak `realm_access`/`resource_access`, and Cognito `cognito:groups`/`scope`). The Entra `roles` check is a no-op when the claim is absent, so the other providers are unaffected. Standard Keycloak tokens place roles under `realm_access`/`resource_access`, not the top-level `roles` claim, so there is no collision in the supported configurations. Do **not** set `quarkus.oidc.roles.role-claim-path=roles` on the shared `external-idp` profile — role extraction is handled by the augmentor across all providers.
+Role extraction is implemented in `RoleMappingAugmentor` (additive alongside OpenShift `groups`, Keycloak `realm_access`/`resource_access`, and Cognito `cognito:groups`/`scope`). The top-level `roles` check runs **only for Microsoft-issued tokens** — the augmentor matches the token `iss` claim against the Microsoft issuer family (`login.microsoftonline.com`/`.us`/`.cn`) — and is a no-op for every other provider. This gate means a top-level `roles` claim emitted by any non-Microsoft provider (for example a custom Keycloak token mapper) cannot collide with the Entra path. Security boundary: the `iss` claim is part of the JWT signature that Quarkus OIDC verifies, together with the discovered issuer, before the augmentor runs, so the issuer gate cannot be forged. Do **not** set `quarkus.oidc.roles.role-claim-path=roles` on the shared `external-idp` profile — role extraction is handled by the augmentor across all providers.
 
 #### Entra prerequisites (Azure Portal)
 
@@ -347,7 +347,7 @@ Role extraction is implemented in `RoleMappingAugmentor` (additive alongside Ope
    - Redirect URI: your app origin, e.g. `http://localhost:8080`.
    - OpenID scopes: `openid`, `email`, `profile`.
 4. **Assign app roles** to users (browser login) and to the agent's service principal (M2M).
-5. For **agent M2M**: grant the caller app the resource app's application permission (app role), and admin-consent it; the caller requests scope `{app-id-uri}/.default`.
+5. For **agent M2M**: grant the caller's service principal the resource app's application permission (app role), and admin-consent it; the caller requests scope `{app-id-uri}/.default`.
 
 #### Environment variables (exploit-iq-client)
 
@@ -402,7 +402,7 @@ Entra `client_credentials` (app-only) access tokens carry **no** `scope`/`scp` c
 Fetch a token (agent-side code lives in the vulnerability-analysis repo; this shows the Entra contract):
 
 ```bash
-TENANT="{tenant-id}"
+TENANT="{tenant}"
 CLIENT_ID="{m2m-app-client-id}"
 CLIENT_SECRET="{m2m-app-client-secret}"
 SCOPE="api://<app-id>/.default"
