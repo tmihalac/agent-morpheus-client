@@ -1,7 +1,7 @@
 # oidc-authentication Specification
 
 ## Purpose
-Define how ExploitIQ maps OIDC identity-provider JWT claims to application roles across OpenShift OAuth, Keycloak, and AWS Cognito (browser login and M2M), including non-regression guarantees for existing IdP paths.
+Define how ExploitIQ maps OIDC identity-provider JWT claims to application roles across OpenShift OAuth, Keycloak, AWS Cognito (browser login and M2M), and Azure Entra ID (browser login and M2M), including non-regression guarantees for existing IdP paths.
 ## Requirements
 ### Requirement: AWS Cognito browser login role mapping
 
@@ -48,17 +48,46 @@ Define how ExploitIQ maps OIDC identity-provider JWT claims to application roles
 - **THEN** the request is authorized by the global `role-policy` (which allows `exploitiq-api-access`)
 - **AND** the caller identity resolves to the JWT `sub` claim (the Cognito App Client ID) for actor attribution, since no `UserInfo` is available for M2M requests
 
+### Requirement: Azure Entra ID role mapping
+
+`RoleMappingAugmentor` SHALL extract application roles from the top-level `roles` claim (a JSON array of app-role values) on the identity's JWT, covering both Azure Entra ID browser login (app roles assigned to users) and M2M `client_credentials` (app-only) tokens. Entra app-only tokens carry no `scope`/`scp` claim and no group-name claim, so the `roles` claim is the only authorization source for an Entra callback token. For each value in `roles` that matches a configured target role (`quarkus.http.auth.policy.role-policy.roles-allowed`), the augmentor SHALL grant that role to the identity, without duplicating roles already granted by another claim path. This claim check SHALL run on every authenticated request **only when the token issuer (`iss` claim) belongs to the Microsoft issuer family** (`login.microsoftonline.com`, `login.microsoftonline.us`, `login.partner.microsoftonline.cn`), and SHALL be a no-op for any other issuer; it requires no new Quarkus profile: the `external-idp` profile's generic OIDC discovery SHALL work unmodified against Entra's `https://login.microsoftonline.com/{tenant}/v2.0/.well-known/openid-configuration`. The `iss` claim is part of the JWT signature that Quarkus OIDC verifies before the augmentor runs, so the issuer gate cannot be forged. Because the top-level `roles` claim is trusted only for Microsoft-issued tokens, a top-level `roles` claim emitted by any other provider (for example a custom Keycloak token mapper) SHALL NOT collide with the Entra path.
+
+#### Scenario: Entra app role matching a target role is granted
+
+- **WHEN** an authenticated request carries a Microsoft-issued JWT (`iss` in the Microsoft issuer family) with a top-level `roles` claim containing `exploit-iq-admin`
+- **AND** `exploit-iq-admin` is present in the configured target roles
+- **THEN** the augmented identity is granted the `exploit-iq-admin` role
+
+#### Scenario: Entra app role not matching any target role is ignored
+
+- **WHEN** an authenticated request carries a Microsoft-issued JWT with a top-level `roles` claim containing a value that is not in the configured target roles
+- **THEN** the augmented identity is not granted a role for that value
+- **AND** no error is raised
+
+#### Scenario: Top-level `roles` claim from a non-Microsoft issuer is not mapped via the Entra path
+
+- **WHEN** an authenticated request carries a JWT whose `iss` claim is not in the Microsoft issuer family (for example a Keycloak token with a custom top-level `roles` mapper)
+- **THEN** the top-level `roles` claim is not used for role mapping
+- **AND** roles are resolved only through that provider's own claim paths
+
+#### Scenario: Entra M2M token is authorized to call the API
+
+- **WHEN** the `exploit-iq-agent` service calls the `exploit-iq-client` API with a Microsoft-issued bearer token obtained from Entra's token endpoint via `client_credentials` grant (scope `{app-id-uri}/.default`), whose top-level `roles` claim contains `exploitiq-api-access`
+- **AND** `exploitiq-api-access` is present in the configured target roles
+- **THEN** the request is authorized by the global `role-policy`
+- **AND** the caller identity resolves to the JWT `sub` claim for actor attribution, since no `UserInfo` is available for M2M requests
+
 ### Requirement: Existing OpenShift and Keycloak role mapping unaffected
 
-Adding AWS Cognito claim support SHALL NOT change role resolution behavior for OpenShift OAuth (`prod` profile, `groups`/`userinfo` roles source) or Keycloak (`external-idp`/`dev` profiles, `realm_access`/`resource_access` roles source) identities. The new `cognito:groups` and `scope`-based checks SHALL be no-ops when their respective claims or configuration are absent.
+Adding AWS Cognito and Azure Entra ID claim support SHALL NOT change role resolution behavior for OpenShift OAuth (`prod` profile, `groups`/`userinfo` roles source) or Keycloak (`external-idp`/`dev` profiles, `realm_access`/`resource_access` roles source) identities. The new `cognito:groups`, `scope`-based, and top-level `roles` checks SHALL be no-ops when their respective claims or configuration are absent.
 
-#### Scenario: OpenShift identity unaffected by Cognito support
+#### Scenario: OpenShift identity unaffected by Cognito and Entra support
 
-- **WHEN** an authenticated request carries an OpenShift JWT/UserInfo with a `groups` claim and no `cognito:groups` or matching `scope` mapping
+- **WHEN** an authenticated request carries an OpenShift JWT/UserInfo with a `groups` claim and no `cognito:groups`, matching `scope` mapping, or top-level `roles` claim
 - **THEN** roles are granted exactly as before this change, via the `groups` claim path only
 
-#### Scenario: Keycloak identity unaffected by Cognito support
+#### Scenario: Keycloak identity unaffected by Cognito and Entra support
 
-- **WHEN** an authenticated request carries a Keycloak JWT with `realm_access.roles` and/or `resource_access.{client-id}.roles` and no `cognito:groups` claim
+- **WHEN** an authenticated request carries a Keycloak JWT with `realm_access.roles` and/or `resource_access.{client-id}.roles` and no `cognito:groups` or top-level `roles` claim
 - **THEN** roles are granted exactly as before this change, via the Keycloak claim paths only
 
