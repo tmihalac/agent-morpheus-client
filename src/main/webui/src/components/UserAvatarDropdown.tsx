@@ -29,7 +29,11 @@ import {
 import { UserIcon } from "@patternfly/react-icons";
 import { useAuth, logout } from "../hooks/useAuth";
 
-const UserAvatarDropdown: React.FC = () => {
+interface UserAvatarDropdownProps {
+  onAboutClick?: () => void;
+}
+
+const UserAvatarDropdown: React.FC<UserAvatarDropdownProps> = ({ onAboutClick }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { userName, loading, error } = useAuth();
 
@@ -39,6 +43,11 @@ const UserAvatarDropdown: React.FC = () => {
 
   const onSelect = () => {
     setIsOpen(false);
+  };
+
+  const handleAbout = () => {
+    setIsOpen(false);
+    onAboutClick?.();
   };
 
   const handleLogout = async () => {
@@ -86,9 +95,14 @@ const UserAvatarDropdown: React.FC = () => {
   }
 
   const userDropdownItems = (
-    <DropdownItem key="logout" onClick={handleLogout}>
-      Logout
-    </DropdownItem>
+    <>
+      <DropdownItem key="about" onClick={handleAbout}>
+        About
+      </DropdownItem>
+      <DropdownItem key="logout" onClick={handleLogout}>
+        Logout
+      </DropdownItem>
+    </>
   );
 
   return (

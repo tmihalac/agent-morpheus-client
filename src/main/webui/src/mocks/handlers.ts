@@ -1259,6 +1259,36 @@ export const handlers = [
     return HttpResponse.json("Retry request accepted");
   }),
 
+  // GET /api/v1/version - Application version and deployment metadata
+  http.get("/api/v1/version", async ({ request }) => {
+    await delay(getMockDelay(request));
+    return HttpResponse.json({
+      applicationRelease: "v0.0.3-msw",
+      environment: {
+        namespace: "exploit-iq-demo",
+        ocpVersion: "4.17.12",
+        deploymentMethod: "Operator",
+      },
+      components: {
+        operator: { version: "v0.0.3-a1b2c3d", status: "ready" },
+        engine: { version: "v0.0.3-e5f6g7h", status: "ready" },
+        webapp: { version: "v0.0.3-9k8j7h6", status: "ready" },
+        cache: { version: "v0.0.3-4m3n2b1", status: "ready" },
+        mcpServer: { version: "not deployed", status: "n/a" },
+        mongodb: { version: "6.0.19", status: "ready" },
+      },
+      models: {
+        llmModel: "meta/llama-3.1-70b-instruct",
+        embedModel: "nvidia/nv-embedqa-e5-v5",
+        llmMode: "nim",
+      },
+    }, {
+      headers: {
+        "Cache-Control": "max-age=60, private",
+      },
+    });
+  }),
+
   // Fallback handler for unhandled requests
   http.all("*", ({ request }) => {
     console.warn(`[MSW] Unhandled request: ${request.method} ${request.url}`);

@@ -15,7 +15,7 @@
  * Based on reference implementation pattern
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Masthead,
   MastheadMain,
@@ -30,10 +30,13 @@ import {
   Flex,
   Stack,
   FlexItem,
+  Button,
 } from '@patternfly/react-core';
 import { PageToggleButton } from '@patternfly/react-core';
 import BarsIcon from '@patternfly/react-icons/dist/esm/icons/bars-icon';
+import QuestionCircleIcon from '@patternfly/react-icons/dist/esm/icons/question-circle-icon';
 import UserAvatarDropdown from './UserAvatarDropdown';
+import AboutModal from './AboutModal';
 
 /**
  * Brand component - displays Red Hat logo and product name
@@ -72,6 +75,8 @@ interface PageHeaderProps {
 }
 
 const PageHeader: React.FC<PageHeaderProps> = ({ isSidebarOpen, onSidebarToggle }) => {
+  const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
+
   const headerToolbar = (
     <Toolbar 
       id="toolbar" 
@@ -104,32 +109,51 @@ const PageHeader: React.FC<PageHeaderProps> = ({ isSidebarOpen, onSidebarToggle 
             md: 'visible',
           }}
         >
-          <UserAvatarDropdown />
+          <Button
+            variant="plain"
+            aria-label="About"
+            onClick={() => setIsAboutModalOpen(true)}
+          >
+            <QuestionCircleIcon />
+          </Button>
+        </ToolbarItem>
+        <ToolbarItem
+          visibility={{
+            default: 'hidden',
+            md: 'visible',
+          }}
+        >
+          <UserAvatarDropdown onAboutClick={() => setIsAboutModalOpen(true)} />
         </ToolbarItem>
       </ToolbarContent>
     </Toolbar>
   );
 
   return (
-    <Masthead>
-      <MastheadMain>
-        <MastheadToggle>
-          <PageToggleButton
-            variant="plain"
-            aria-label="Global navigation"
-            isSidebarOpen={isSidebarOpen}
-            onSidebarToggle={onSidebarToggle}
-            id="vertical-nav-toggle"
-          >
-            <BarsIcon />
-          </PageToggleButton>
-        </MastheadToggle>
-        <MastheadBrand aria-label="ExploitIQ">
-          <Brand />
-        </MastheadBrand>
-      </MastheadMain>
-      <MastheadContent aria-label="Page header content">{headerToolbar}</MastheadContent>
-    </Masthead>
+    <>
+      <Masthead>
+        <MastheadMain>
+          <MastheadToggle>
+            <PageToggleButton
+              variant="plain"
+              aria-label="Global navigation"
+              isSidebarOpen={isSidebarOpen}
+              onSidebarToggle={onSidebarToggle}
+              id="vertical-nav-toggle"
+            >
+              <BarsIcon />
+            </PageToggleButton>
+          </MastheadToggle>
+          <MastheadBrand aria-label="ExploitIQ">
+            <Brand />
+          </MastheadBrand>
+        </MastheadMain>
+        <MastheadContent aria-label="Page header content">{headerToolbar}</MastheadContent>
+      </Masthead>
+      {isAboutModalOpen && (
+        <AboutModal isOpen onClose={() => setIsAboutModalOpen(false)} />
+      )}
+    </>
   );
 };
 

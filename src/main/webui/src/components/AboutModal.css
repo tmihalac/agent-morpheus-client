@@ -1,0 +1,95 @@
+/* Remove the default brand/header grid rows — the logo is rendered inside
+   custom content alongside the close button. */
+.ei-about-modal.pf-v6-c-about-modal-box {
+  grid-template-areas: "content close" !important;
+  grid-template-columns: 1fr auto !important;
+  grid-template-rows: auto !important;
+  height: fit-content !important;
+}
+
+.ei-about-modal.pf-v6-c-about-modal-box .pf-v6-c-about-modal-box__brand,
+.ei-about-modal.pf-v6-c-about-modal-box .pf-v6-c-about-modal-box__header {
+  display: none !important;
+}
+
+.ei-about-modal.pf-v6-c-about-modal-box .pf-v6-c-about-modal-box__close {
+  padding-block-start: var(--pf-t--global--spacer--xl);
+}
+
+.ei-about-modal__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pf-t--global--spacer--2xl);
+}
+
+.ei-about-modal__brand-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+}
+
+.ei-about-modal__brand-logo {
+  width: 37px;
+  height: 28px;
+}
+
+.ei-about-modal__product-name {
+  font-size: var(--pf-t--global--font--size--2xl);
+  font-weight: var(--pf-t--global--font--weight--heading--bold);
+  margin: 0;
+  color: var(--pf-t--global--text--color--regular, #151515);
+}
+
+.ei-about-modal__subtitle {
+  font-size: var(--pf-t--global--font--size--heading--xl);
+  font-weight: 500;
+  margin: 0;
+  color: var(--pf-t--global--text--color--regular, #151515);
+}
+
+.ei-about-modal__description {
+  margin: 0;
+}
+
+.ei-about-modal__details {
+  display: block;
+  width: 100%;
+  overflow-wrap: break-word;
+}
+
+.ei-about-modal__detail-row {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.ei-about-modal__detail-label {
+  display: inline-block;
+  font-weight: 700;
+  width: 165px;
+  flex-shrink: 0;
+}
+
+.ei-about-modal__detail-value {
+  display: inline-block;
+  flex: 1 1 auto;
+}
+
+.ei-about-modal__component-row {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  width: 100%;
+  padding-left: 24px;
+  margin-bottom: 10px;
+}
+
+.ei-about-modal__component-label {
+  display: inline-block;
+  font-weight: 700;
+  width: 125px;
+  flex-shrink: 0;
+}
