@@ -323,14 +323,17 @@ Entra differs from Keycloak and Cognito in important ways:
 
 | Topic | Entra behavior |
 |-------|----------------|
-| Human roles | JWT top-level `roles` claim (app-role values must match ExploitIQ roles exactly) |
+| Human roles | App-role values in the **access token** `roles` claim (values must match ExploitIQ roles exactly). The browser access token must target the resource app — see "Browser scopes" and `QUARKUS_OIDC_ROLES_ROLE_CLAIM_PATH` below |
 | M2M tokens | `client_credentials` (app-only) tokens have **no** `scope`/`scp` claim; app roles are in the top-level `roles` claim |
 | Group names | The `groups` claim holds group **object IDs (GUIDs)**, not names — not usable for role mapping; use app roles |
 | Token endpoint | `https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token` |
 | M2M scope | Must be `{app-id-uri}/.default` (Entra rejects arbitrary scopes for `client_credentials`) |
-| Browser scopes | `openid`, `profile`, `email` |
+| Browser scopes | `openid`, `profile`, `email`, **and `{app-id-uri}/.default`** — the resource scope is required so the authorization_code access token's `aud` is the resource app and carries its `roles`; without it the access token targets Microsoft Graph and every human login is denied |
 
-Role extraction is implemented in `RoleMappingAugmentor` (additive alongside OpenShift `groups`, Keycloak `realm_access`/`resource_access`, and Cognito `cognito:groups`/`scope`). The top-level `roles` check runs **only for Microsoft-issued tokens** — the augmentor matches the token `iss` claim against the Microsoft issuer family (`login.microsoftonline.com`/`.us`/`.cn`) — and is a no-op for every other provider. This gate means a top-level `roles` claim emitted by any non-Microsoft provider (for example a custom Keycloak token mapper) cannot collide with the Entra path. Security boundary: the `iss` claim is part of the JWT signature that Quarkus OIDC verifies, together with the discovered issuer, before the augmentor runs, so the issuer gate cannot be forged. Do **not** set `quarkus.oidc.roles.role-claim-path=roles` on the shared `external-idp` profile — role extraction is handled by the augmentor across all providers.
+Role recognition for the Entra path is gated on the configured provider flag **`EXPLOITIQ_SECURITY_OIDC_PROVIDER=entra`** (the operator sets it from `spec.auth.oidc.provider`; set it manually on the kustomize path) **and** the token `iss` equaling the configured issuer (`quarkus.oidc.auth-server-url`). A provider flag is used instead of matching the issuer host because Entra **B2C** (`{tenant}.b2clogin.com`), **External ID / CIAM** (`{tenant}.ciamlogin.com`), and their custom domains cannot be recognized by hostname. The two token flows carry roles differently:
+
+- **M2M callback (engine → webapp):** the bearer principal is the access token (`aud` = resource app); `RoleMappingAugmentor` reads its top-level `roles` claim.
+- **Browser human login:** the Quarkus principal is the ID token (`aud` = UI client), which has no resource roles. Set `QUARKUS_OIDC_ROLES_ROLE_CLAIM_PATH=roles` so Quarkus reads roles from the access token (`roles.source=accesstoken` is already set by the `external-idp` profile; its default claim path is `groups`). Without it, browser login is denied **403** with no `RoleMappingAugmentor` log line.
 
 #### Entra prerequisites (Azure Portal)
 
@@ -357,6 +360,9 @@ Role extraction is implemented in `RoleMappingAugmentor` (additive alongside Ope
 | `QUARKUS_OIDC_AUTH_SERVER_URL` | Entra **issuer** URL for the tenant, **not** `.../.well-known/openid-configuration` | `https://login.microsoftonline.com/{tenant}/v2.0` |
 | `QUARKUS_OIDC_CLIENT_ID` | Web UI app client ID | Entra portal → App registrations |
 | `QUARKUS_OIDC_CREDENTIALS_SECRET` | Web UI app client secret | Entra portal → Certificates & secrets |
+| `QUARKUS_OIDC_AUTHENTICATION_SCOPES` | Browser login scopes incl. the resource `.default` so the access token targets the resource app | `openid,email,profile,api://<app-id>/.default` |
+| `EXPLOITIQ_SECURITY_OIDC_PROVIDER` | Provider family; gates the Entra role path and RP-initiated logout. Required for Entra (incl. B2C/CIAM) | `entra` |
+| `QUARKUS_OIDC_ROLES_ROLE_CLAIM_PATH` | **Entra only.** Read human-login roles from the access-token `roles` claim; without it browser login is denied 403 | `roles` |
 | `NAMESPACE` | Required for service-account role string expansion | OpenShift namespace, or `local-dev` locally |
 | `CREDENTIAL_ENCRYPTION_KEY` | 32-byte key for credential store (unrelated to Entra) | Deployment secret |
 
@@ -386,14 +392,17 @@ env:
     secretKeyRef:
       name: entra-oidc
       key: client-secret
+- name: EXPLOITIQ_SECURITY_OIDC_PROVIDER
+  value: "entra"
+- name: QUARKUS_OIDC_AUTHENTICATION_SCOPES
+  value: "openid,email,profile,api://<app-id>/.default"
+- name: QUARKUS_OIDC_ROLES_ROLE_CLAIM_PATH
+  value: "roles"
 ```
 
-#### Verify browser roles (`roles`)
+#### Browser logout (RP-initiated)
 
-1. Assign the user the `exploit-iq-admin` (or `view` / `prodsec`) app role in the resource app registration.
-2. After login, APIs should return **200** (not **403**).
-3. Quarkus logs should include: `Mapping user to role 'exploit-iq-admin' from source: Azure Entra ID App Role`.
-4. Optional: decode the **access** token and confirm a top-level `roles` array with those exact values.
+Entra logout is RP-initiated: `POST /api/v1/user/logout` redirects (303) to the discovered `end_session_endpoint` with a `post_logout_redirect_uri`, so Entra ends its own session instead of leaving it alive for a silent SSO re-login.
 
 #### Agent / M2M bearer tokens (client side)
 
