@@ -119,6 +119,12 @@ You can create a native executable using:
 ./mvnw package -Dnative
 ```
 
+The production UBI native images set
+`javax.net.ssl.trustStore=/etc/pki/ca-trust/extracted/java/cacerts` at runtime.
+This lets the default OIDC configuration use public CA certificates available
+in the runtime image. Custom OIDC CA bundles remain installer-specific overrides
+through the named `oidc` TLS configuration.
+
 ### Build profiles
 
 > **Warning**: Quarkus has build-time properties that are fixed at compile time. If you change

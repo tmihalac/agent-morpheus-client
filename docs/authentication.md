@@ -48,6 +48,13 @@ All profiles support both browser and API authentication:
 
 The default production configuration uses OpenShift's built-in OAuth server.
 
+Native WebApp images use the runtime container trust store for the default OIDC
+TLS configuration. Publicly trusted OpenShift OAuth and external OIDC endpoints
+therefore do not require an OIDC CA ConfigMap. A custom CA bundle is still
+required when the provider uses a private, self-signed, or cluster-specific CA;
+the installer must configure it through the named `oidc` TLS configuration so it
+overrides the default runtime trust store.
+
 ### Prerequisites
 
 Create an `OAuthClient` resource in your OpenShift cluster:
