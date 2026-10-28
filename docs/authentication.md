@@ -55,6 +55,17 @@ required when the provider uses a private, self-signed, or cluster-specific CA;
 the installer must configure it through the named `oidc` TLS configuration so it
 overrides the default runtime trust store.
 
+For a private OIDC endpoint, mount a complete bundle containing the system public
+CAs and the private CA, then set:
+
+```text
+QUARKUS_OIDC_TLS_TLS_CONFIGURATION_NAME=oidc
+QUARKUS_TLS__OIDC__TRUST_STORE_PEM_CERTS=/etc/oidc-ca/ca-bundle.crt
+```
+
+Do not configure a private CA bundle for public Entra ID or Cognito endpoints;
+their certificates are validated by the runtime system trust store.
+
 ### Prerequisites
 
 Create an `OAuthClient` resource in your OpenShift cluster:
