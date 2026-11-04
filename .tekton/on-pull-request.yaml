@@ -4,12 +4,12 @@ kind: PipelineRun
 metadata:
   name: exploit-iq-client-on-pr
   annotations:
-    # The event we are targeting as seen from the webhook payload
-    # this can be an array too, i.e: [pull_request, push]
-    pipelinesascode.tekton.dev/on-event: "[pull_request]"
-
-    # The branch or tag we are targeting (ie: main, refs/tags/*)
-    pipelinesascode.tekton.dev/on-target-branch: "[main]"
+    # Pull requests to main and to release branches (0.0.5, ...). Release-branch
+    # on-pr-<sha> images let exploit-iq-agent E2E test release PRs with the
+    # matching client.
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      event == "pull_request" &&
+      (target_branch == "main" || target_branch.matches("^[0-9]+\\.[0-9]+\\.[0-9]+$"))
 
     # Fetch the git-clone task from hub, we are able to reference later on it
     # with taskRef and it will automatically be embedded into our pipeline.
@@ -26,7 +26,7 @@ spec:
     - name: revision
       value: "{{ revision }}"
     - name: image-expires-after
-      value: 5d
+      value: 14d
     - name: output-image
       value: quay.io/ecosystem-appeng/exploit-iq-client:on-pr-{{revision}}
     - name: path-context
