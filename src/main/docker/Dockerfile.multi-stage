@@ -20,8 +20,8 @@ COPY --chown=quarkus:quarkus src /code/src
 RUN ./mvnw verify -B -Pnative -Dmaven.test.skip=true -Dquarkus.profile=${QUARKUS_PROFILE} -Dquarkus.native.native-image-xmx=8g
 
 # Pin Syft with checksum verification (APPENG-5702 / T-041) — do not use curl|sh from main
-ARG SYFT_VERSION=1.54.0
-ARG SYFT_SHA256=54a87372498168b2d033e876fd41fa4e8035b872699e525a57046e1f2f09c860
+ARG SYFT_VERSION=1.56.0
+ARG SYFT_SHA256=1c2493cfcf52d3367d6cb25780d9190c111c2219c34c820574c43e8bae15c528
 RUN curl -sSfL "https://github.com/anchore/syft/releases/download/v${SYFT_VERSION}/syft_${SYFT_VERSION}_linux_amd64.tar.gz" -o /tmp/syft.tar.gz \
   && echo "${SYFT_SHA256}  /tmp/syft.tar.gz" | sha256sum -c - \
   && tar -xzf /tmp/syft.tar.gz -C /tmp syft \
