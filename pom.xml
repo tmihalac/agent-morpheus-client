@@ -12,7 +12,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-    <quarkus.platform.version>3.40.1</quarkus.platform.version>
+    <quarkus.platform.version>3.40.1.1</quarkus.platform.version>
     <skipITs>true</skipITs>
     <surefire-plugin.version>3.6.0</surefire-plugin.version>
     <quarkus-quinoa.version>2.9.2</quarkus-quinoa.version>
@@ -20,24 +20,20 @@
 
   <dependencyManagement>
     <dependencies>
+      <!-- Pin Jackson to fix vulnerabilities - can be removed after quarkus updates to Jackson 2.22.4 or beyond -->
+      <dependency>
+        <groupId>com.fasterxml.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>2.22.4</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
       <dependency>
         <groupId>${quarkus.platform.group-id}</groupId>
         <artifactId>${quarkus.platform.artifact-id}</artifactId>
         <version>${quarkus.platform.version}</version>
         <type>pom</type>
         <scope>import</scope>
-      </dependency>
-      <!-- Pin the version to fix vulnerabilities - can be removed after quarkus updates to those versions or beyond -->
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-core</artifactId>
-        <version>2.22.3</version>
-      </dependency>
-      <!-- Pin the version to fix vulnerabilities - can be removed after quarkus updates to those versions or beyond -->
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-databind</artifactId>
-        <version>2.22.3</version>
       </dependency>
       <!-- Pin brotli4j to fix CVE-2026-111497 (Brotli decoder out-of-bounds write) - can be removed after quarkus updates to brotli4j 1.24.0 or beyond. The native-* artifacts hold the vulnerable decoder, so pin every build platform. -->
       <dependency>
