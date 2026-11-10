@@ -3,8 +3,9 @@
 
 const SPDX_VERSION = "2.3" as const;
 const CYCLONEDX_VERSIONS = ["1.6", "1.7"] as const;
+const CYCLONEDX_VERSIONS_TEXT = CYCLONEDX_VERSIONS.join(" or ");
 
-export { SPDX_VERSION, CYCLONEDX_VERSIONS };
+export { SPDX_VERSION, CYCLONEDX_VERSIONS, CYCLONEDX_VERSIONS_TEXT };
 
 export enum SbomFormat {
   SPDX = "SPDX",
@@ -34,5 +35,5 @@ export async function detectSbomFormat(file: File): Promise<SbomFormat | null> {
 
 /** User-facing unsupported format message (matches prior modal copy). */
 export function unsupportedSbomFormatMessage(): string {
-  return `File format not supported. Please upload an ${SbomFormat.SPDX} ${SPDX_VERSION} or ${SbomFormat.CycloneDX} 1.6 or 1.7 file.`;
+  return `File format not supported. Please upload an ${SbomFormat.SPDX} ${SPDX_VERSION} or ${SbomFormat.CycloneDX} ${CYCLONEDX_VERSIONS_TEXT} file.`;
 }

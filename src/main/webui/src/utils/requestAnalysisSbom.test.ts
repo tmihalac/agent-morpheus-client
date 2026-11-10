@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { detectSbomFormat, SbomFormat } from "./requestAnalysisSbom";
+import {
+  CYCLONEDX_VERSIONS,
+  detectSbomFormat,
+  SbomFormat,
+  unsupportedSbomFormatMessage,
+} from "./requestAnalysisSbom";
 
 function sbomFile(content: Record<string, unknown>): File {
   return new File([JSON.stringify(content)], "sbom.json", { type: "application/json" });
@@ -21,5 +26,9 @@ describe("detectSbomFormat", () => {
     await expect(
       detectSbomFormat(sbomFile({ SPDXID: "SPDXRef-DOCUMENT", spdxVersion: "SPDX-2.3" })),
     ).resolves.toBe(SbomFormat.SPDX);
+  });
+
+  it("lists every supported CycloneDX version in the error message", () => {
+    expect(unsupportedSbomFormatMessage()).toContain(CYCLONEDX_VERSIONS.join(" or "));
   });
 });

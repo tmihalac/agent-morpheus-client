@@ -9,7 +9,11 @@ import {
   HelperText,
   HelperTextItem,
 } from "@patternfly/react-core";
-import { SbomFormat, SPDX_VERSION } from "../../utils/requestAnalysisSbom";
+import {
+  CYCLONEDX_VERSIONS_TEXT,
+  SbomFormat,
+  SPDX_VERSION,
+} from "../../utils/requestAnalysisSbom";
 import type { AnalysisRequestFormFileHandlers } from "../../hooks/useAnalysisRequestForm";
 
 export interface RequestAnalysisSbomFileFieldProps {
@@ -47,7 +51,7 @@ const RequestAnalysisSbomFileField: React.FC<RequestAnalysisSbomFileFieldProps> 
           ) : (
             <HelperTextItem>
               Supported formats: {SbomFormat.SPDX} {SPDX_VERSION} (multi-component) or{" "}
-              {SbomFormat.CycloneDX} 1.6 or 1.7 (single-component)
+              {SbomFormat.CycloneDX} {CYCLONEDX_VERSIONS_TEXT} (single-component)
             </HelperTextItem>
           )}
         </HelperText>
