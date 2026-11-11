@@ -2632,50 +2632,6 @@
         }
       }
     },
-    "/api/v1/pre-processing": {
-      "post": {
-        "summary": "Submit report requests for pre-processing",
-        "description": "Submits a list of report requests for pre-processing to the Component Syncer",
-        "requestBody": {
-          "description": "List of report requests for pre-processing",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/ReportData"
-                }
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Pre-processing request accepted by the Component Syncer",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error"
-          },
-          "400": {
-            "description": "Bad Request"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ],
-        "tags": [
-          "Pre Processing Endpoint"
-        ]
-      }
-    },
     "/api/v1/products": {
       "get": {
         "summary": "List all product data",

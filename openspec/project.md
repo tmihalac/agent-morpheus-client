@@ -223,9 +223,6 @@ Standard labels used to categorize vulnerability analysis results:
   - Endpoint: `https://api.github.com`
   - Used for component and language detection
 
-- **Component Syncer Service**: For component synchronization
-  - Endpoint: Configurable via `quarkus.rest-client.component-syncer.url`
-  - Knative eventing integration
 
 ### Infrastructure
 - **MongoDB**: Primary data store for reports, products, vulnerabilities

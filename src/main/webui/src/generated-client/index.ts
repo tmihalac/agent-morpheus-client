@@ -50,7 +50,6 @@ export { MlOpsAudit2JobResourceService } from './services/MlOpsAudit2JobResource
 export { MlOpsAudit3TraceResourceService } from './services/MlOpsAudit3TraceResourceService';
 export { MlOpsAudit4EvalResourceService } from './services/MlOpsAudit4EvalResourceService';
 export { OverviewMetricsService } from './services/OverviewMetricsService';
-export { PreProcessingEndpointService } from './services/PreProcessingEndpointService';
 export { ProductEndpointService } from './services/ProductEndpointService';
 export { ReportEndpointService } from './services/ReportEndpointService';
 export { ReportStreamResourceService } from './services/ReportStreamResourceService';
