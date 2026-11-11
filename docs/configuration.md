@@ -62,16 +62,6 @@ submitting enough large requests to exhaust the entire queue and blocking other
 users. When a user reaches this limit, new requests are rejected immediately with
 HTTP 429, without affecting the global pending/active accounting for other users.
 
-## Pending Component Syncer timeout
-
-The Component Syncer is responsible for pre-processing component documents during product scanning. You can configure the timeout for the syncer to control how long the system waits for the component synchronization process to complete and send processed batch for analysis before timing out.
-
-```properties
-exploit-iq.syncer.timeout=1h # duration to wait for component syncer during pre-processing
-```
-
-Set this value according to the expected processing time for your product. If the syncer does not finish within the configured timeout, any components still pending will be marked as expired.
-
 ## SSE keepalive heartbeat
 
 The live-update SSE stream (`/api/v1/reports/stream`) keeps a long-lived HTTP connection open. Proxies and load balancers (including OpenShift's HAProxy ingress) close idle connections after their configured timeout. To prevent unexpected disconnects, the server periodically emits an SSE comment line that counts as activity for the proxy but is silently discarded by the browser.
