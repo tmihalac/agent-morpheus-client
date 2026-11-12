@@ -7,8 +7,8 @@
 FROM registry.redhat.io/quarkus/mandrel-for-jdk-21-rhel8:23.1 AS syft
 USER 0
 # Pin Syft with checksum verification (APPENG-5702 / T-041) — keep in sync with Dockerfile.multi-stage
-ARG SYFT_VERSION=1.46.0
-ARG SYFT_SHA256=d654f678b709eb53c393d38519d5ed7d2e57205529404018614cfefa0fb2b5ca
+ARG SYFT_VERSION=1.56.0
+ARG SYFT_SHA256=1c2493cfcf52d3367d6cb25780d9190c111c2219c34c820574c43e8bae15c528
 RUN curl -sSfL "https://github.com/anchore/syft/releases/download/v${SYFT_VERSION}/syft_${SYFT_VERSION}_linux_amd64.tar.gz" -o /tmp/syft.tar.gz \
   && echo "${SYFT_SHA256}  /tmp/syft.tar.gz" | sha256sum -c - \
   && tar -xzf /tmp/syft.tar.gz -C /tmp syft \
