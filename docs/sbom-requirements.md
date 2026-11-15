@@ -19,7 +19,7 @@ ExploitIQ supports two SBOM formats for analysis requests:
 | Format | Use case |
 |--------|----------|
 | **SPDX 2.3** | Multi-component **product** analysis 
-| **CycloneDX 1.6** | **Single-component** analysis 
+| **CycloneDX 1.6 or 1.7** | **Single-component** analysis
 
 ## SPDX 2.3 (Multi-component)
 
@@ -57,17 +57,17 @@ Each image MUST include:
 
 ---
 
-## CycloneDX 1.6 (single component)
+## CycloneDX 1.6 or 1.7 (single component)
 
 ### Example
 
-See [`nmstate-rhel8-operator.json`](../src/test/resources/devservices/cyclonedx-sboms/nmstate-rhel8-operator.json) for a complete CycloneDX 1.6 document produced by Syft from a container image scan. It includes the required `metadata.component`, source-code properties, and a populated `components` list of packages found in the image.
+See [`nmstate-rhel8-operator.json`](../src/test/resources/devservices/cyclonedx-sboms/nmstate-rhel8-operator.json) for a complete CycloneDX 1.6 or 1.7 document produced by Syft from a container image scan. It includes the required `metadata.component`, source-code properties, and a populated `components` list of packages found in the image.
 
 ### Document structure
 
 A CycloneDX single-component SBOM MUST:
 
-- Set `bomFormat` to `CycloneDX` and `specVersion` to `1.6`.
+- Set `bomFormat` to `CycloneDX` and `specVersion` to `1.6` or `1.7`.
 - Include `metadata.component` with a non-empty `name` (typically the container image reference). Optional fields such as `type`, `version`, `bom-ref`, and `purl` are copied to report metadata when present.
 - Include a `components` array listing the packages discovered in the SBOM (for example, RPMs or libraries from a Syft image scan).
 

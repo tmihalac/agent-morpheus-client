@@ -54,7 +54,7 @@ In this section, you will find a summary of system performance from the past sev
 
 The _Request Analysis_ dialog lets you choose an input type with **SBOM**, **Single Repository**, or **RPM**, then enter a CVE ID to analyze.
 
-- **SBOM:** Upload a JSON SBOM file. Supported formats: **SPDX 2.3** and **CycloneDX 1.6** JSON. Refer to [SBOM Requirements](./docs/sbom-requirements.md) for details on expected SBOM structure.
+- **SBOM:** Upload a JSON SBOM file. Supported formats: **SPDX 2.3** and **CycloneDX 1.6 or 1.7** JSON. Refer to [SBOM Requirements](./docs/sbom-requirements.md) for details on expected SBOM structure.
 - **Single Repository:** Provide a source repository URL and a commit ID instead of an SBOM file. Expand **Advanced** (optional) to set a **Manifest path** within the repo or a **Programming language** (`go`, `python`, `javascript`, `java`, or `c`); leave both blank to let the agent autodetect.
 - **RPM:** Provide the package as a hyphen-separated **name-version-release** (N-V-R), for example `openssl-3.0.7-5.el9`, and select an architecture.
 

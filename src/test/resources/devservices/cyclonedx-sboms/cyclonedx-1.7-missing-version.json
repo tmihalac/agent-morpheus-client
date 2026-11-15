@@ -1,0 +1,39 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "serialNumber": "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "container",
+      "name": "test-image",
+      "version": "1.0",
+      "purl": "pkg:oci/test-image@sha256:abc123"
+    },
+    "properties": [
+      {
+        "name": "image.source-location",
+        "value": "https://github.com/openshift/kubernetes-nmstate"
+      },
+      {
+        "name": "image.source.commit-id",
+        "value": "444141eb5cc460308e662509df18ae1d0274005b"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "missing-version",
+      "purl": "pkg:rpm/redhat/missing-version",
+      "properties": [
+        {
+          "name": "syft:package:type",
+          "value": "rpm"
+        }
+      ]
+    }
+  ],
+  "dependencies": []
+}
