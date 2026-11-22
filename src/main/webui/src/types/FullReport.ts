@@ -94,7 +94,7 @@ export interface FullReportImage {
   /** Programming language ecosystem */
   ecosystem?: string;
   /** Warning emitted when GitHub ecosystem detection falls back to all-language patterns */
-  ecosystem_detection_warning?: string;
+  ecosystem_detection_warning?: string | null;
   /** Manifest file path */
   manifest_path?: string;
   /** Image name (optional in FullReport context) */

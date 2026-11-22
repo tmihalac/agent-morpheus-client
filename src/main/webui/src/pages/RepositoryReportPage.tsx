@@ -197,7 +197,7 @@ const RepositoryReportPage: React.FC = () => {
     }
   })();
   const ecosystemDetectionWarning =
-    !isRpm && !image?.ecosystem && isGitHubRepository
+    !isRpm && isGitHubRepository
       ? image?.ecosystem_detection_warning
       : undefined;
   /** Terminal analysis failure: same UI as Finding "failed" (failed or expired; details in error.message). */

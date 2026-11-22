@@ -86,14 +86,34 @@ describe("RepositoryReportPage ecosystem detection warning", () => {
     ).toBe(true);
   });
 
+  it("renders the API warning when a configured default ecosystem is retained", () => {
+    renderPage(
+      repositoryReport({
+        ecosystem: "go",
+        ecosystem_detection_warning: warning,
+      }),
+    );
+
+    expect(
+      screen
+        .getAllByRole("alert")
+        .some((alert) => alert.textContent?.includes(warning)),
+    ).toBe(true);
+  });
+
   it("does not render a warning when the report image does not contain one", () => {
     renderPage(repositoryReport());
 
     expect(screen.queryByText(warning)).toBeNull();
   });
 
+  it("does not render a warning for a user-selected ecosystem without a warning field", () => {
+    renderPage(repositoryReport({ ecosystem: "go" }));
+
+    expect(screen.queryByText(warning)).toBeNull();
+  });
+
   it.each([
-    ["a user-selected ecosystem", { ecosystem: "go" }],
     [
       "a non-GitHub repository",
       {
