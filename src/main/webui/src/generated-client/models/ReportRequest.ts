@@ -62,6 +62,10 @@ export type ReportRequest = {
          * RPM target package when pipeline_mode is rpm_package_checker
          */
         target_package?: TargetPackage;
+        /**
+         * Warning emitted when GitHub ecosystem detection falls back to all-language patterns
+         */
+        readonly ecosystem_detection_warning?: string | null;
     };
     /**
      * Credential for private repository access (optional, required only for private repository access)
