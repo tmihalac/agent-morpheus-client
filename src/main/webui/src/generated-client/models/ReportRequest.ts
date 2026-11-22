@@ -65,7 +65,7 @@ export type ReportRequest = {
         /**
          * Warning emitted when GitHub ecosystem detection falls back to all-language patterns
          */
-        readonly ecosystem_detection_warning?: string;
+        readonly ecosystem_detection_warning?: string | null;
     };
     /**
      * Credential for private repository access (optional, required only for private repository access)

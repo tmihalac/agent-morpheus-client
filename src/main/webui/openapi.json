@@ -352,7 +352,10 @@
             "$ref": "#/components/schemas/TargetPackage"
           },
           "ecosystem_detection_warning": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Warning emitted when GitHub ecosystem detection falls back to all-language patterns",
             "readOnly": true
           }
@@ -958,7 +961,10 @@
                 "$ref": "#/components/schemas/TargetPackage"
               },
               "ecosystem_detection_warning": {
-                "type": "string",
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "description": "Warning emitted when GitHub ecosystem detection falls back to all-language patterns",
                 "readOnly": true
               }

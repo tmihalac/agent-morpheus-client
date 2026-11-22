@@ -108,7 +108,7 @@ export interface FullReportImage {
     ref?: string;
     include?: string[];
     exclude?: string[];
-  }>;
+  }> | null;
   /** SBOM information */
   sbom_info?: Record<string, unknown>;
 }

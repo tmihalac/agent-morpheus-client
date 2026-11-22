@@ -79,7 +79,11 @@ describe("RepositoryReportPage ecosystem detection warning", () => {
   it("renders the API warning when the report image contains it", () => {
     renderPage(repositoryReport({ ecosystem_detection_warning: warning }));
 
-    expect(screen.getByText(warning)).not.toBeNull();
+    expect(
+      screen
+        .getAllByRole("alert")
+        .some((alert) => alert.textContent?.includes(warning)),
+    ).toBe(true);
   });
 
   it("does not render a warning when the report image does not contain one", () => {
@@ -107,5 +111,88 @@ describe("RepositoryReportPage ecosystem detection warning", () => {
     renderPage(repositoryReport({ ecosystem_detection_warning: warning, ...image }));
 
     expect(screen.queryByText(warning)).toBeNull();
+  });
+
+  it("does not crash or warn for an RPM report with null source_info", () => {
+    renderPage(
+      repositoryReport({
+        pipeline_mode: "rpm_package_checker",
+        source_info: null,
+        target_package: {
+          name: "openssl",
+          version: "3.2.2",
+          release: "1.el9",
+          arch: "x86_64",
+          ecosystem: "rpm",
+        },
+        ecosystem_detection_warning: warning,
+      }),
+    );
+
+    expect(screen.queryByText(warning)).toBeNull();
+  });
+
+  it.each([
+    "https://evilgithub.com/example/repository",
+    "https://github.com.attacker.example/example/repository",
+  ])("does not warn for a spoofed GitHub hostname: %s", (gitRepo) => {
+    renderPage(
+      repositoryReport({
+        source_info: [
+          { type: "code", git_repo: gitRepo, ref: "main" },
+        ],
+        ecosystem_detection_warning: warning,
+      }),
+    );
+
+    expect(screen.queryByText(warning)).toBeNull();
+  });
+
+  it("ignores GitHub URLs on non-code sources", () => {
+    renderPage(
+      repositoryReport({
+        source_info: [
+          {
+            type: "doc",
+            git_repo: "https://github.com/example/docs",
+            ref: "main",
+          },
+          {
+            type: "code",
+            git_repo: "https://gitlab.com/example/repository",
+            ref: "main",
+          },
+        ],
+        ecosystem_detection_warning: warning,
+      }),
+    );
+
+    expect(screen.queryByText(warning)).toBeNull();
+  });
+
+  it("uses the exact mixed-case GitHub hostname from the code source", () => {
+    renderPage(
+      repositoryReport({
+        source_info: [
+          {
+            type: "doc",
+            git_repo: "https://github.com.attacker.example/docs",
+            ref: "main",
+          },
+          {
+            type: "code",
+            git_repo: "https://GitHub.com/example/repository",
+            ref: "main",
+          },
+        ],
+        ecosystem_detection_warning: warning,
+      }),
+    );
+
+    expect(
+      screen
+        .getAllByRole("alert")
+        .some((alert) => alert.textContent?.includes(warning)),
+    ).toBe(true);
   });
 });

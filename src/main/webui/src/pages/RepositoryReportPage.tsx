@@ -183,10 +183,19 @@ const RepositoryReportPage: React.FC = () => {
   const outputVuln = findAnalysisRowForRouteCve(report, cveId);
   const isRpm = isRpmPackageCheckerReport(report);
   const image = report.input?.image;
-  const isGitHubRepository =
-    image?.source_info.some(
-      (source) => source.git_repo?.toLowerCase().includes("github.com") ?? false,
-    ) ?? false;
+  const codeRepository = !isRpm
+    ? image?.source_info?.find((source) => source.type === "code")?.git_repo
+    : undefined;
+  const isGitHubRepository = (() => {
+    if (!codeRepository) {
+      return false;
+    }
+    try {
+      return new URL(codeRepository).hostname.toLowerCase() === "github.com";
+    } catch {
+      return false;
+    }
+  })();
   const ecosystemDetectionWarning =
     !isRpm && !image?.ecosystem && isGitHubRepository
       ? image?.ecosystem_detection_warning
@@ -250,7 +259,12 @@ const RepositoryReportPage: React.FC = () => {
         </GridItem>
         {ecosystemDetectionWarning && (
           <GridItem>
-            <Alert title="Ecosystem detection warning" variant="warning" isInline>
+            <Alert
+              title="Ecosystem detection warning"
+              variant="warning"
+              isInline
+              role="alert"
+            >
               {ecosystemDetectionWarning}
             </Alert>
           </GridItem>
