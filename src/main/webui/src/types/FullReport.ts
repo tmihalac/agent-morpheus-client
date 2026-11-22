@@ -93,6 +93,8 @@ export interface FullReportImage {
   target_package?: RpmTargetPackage;
   /** Programming language ecosystem */
   ecosystem?: string;
+  /** Warning emitted when GitHub ecosystem detection falls back to all-language patterns */
+  ecosystem_detection_warning?: string;
   /** Manifest file path */
   manifest_path?: string;
   /** Image name (optional in FullReport context) */

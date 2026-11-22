@@ -182,6 +182,15 @@ const RepositoryReportPage: React.FC = () => {
 
   const outputVuln = findAnalysisRowForRouteCve(report, cveId);
   const isRpm = isRpmPackageCheckerReport(report);
+  const image = report.input?.image;
+  const isGitHubRepository =
+    image?.source_info.some(
+      (source) => source.git_repo?.toLowerCase().includes("github.com") ?? false,
+    ) ?? false;
+  const ecosystemDetectionWarning =
+    !isRpm && !image?.ecosystem && isGitHubRepository
+      ? image?.ecosystem_detection_warning
+      : undefined;
   /** Terminal analysis failure: same UI as Finding "failed" (failed or expired; details in error.message). */
   const isFailed = isFailingState(status ?? "");
   const reportIdDisplay = repositoryReportSubtitleDisplay(report, cveId);
@@ -239,6 +248,13 @@ const RepositoryReportPage: React.FC = () => {
             Always review AI generated content prior to use.
           </Alert>
         </GridItem>
+        {ecosystemDetectionWarning && (
+          <GridItem>
+            <Alert title="Ecosystem detection warning" variant="warning" isInline>
+              {ecosystemDetectionWarning}
+            </Alert>
+          </GridItem>
+        )}
         <GridItem>
           <DetailsCard
             report={report}
