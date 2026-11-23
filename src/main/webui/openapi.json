@@ -350,6 +350,14 @@
             "description": "RPM target package when pipeline_mode is rpm_package_checker",
             "type": "object",
             "$ref": "#/components/schemas/TargetPackage"
+          },
+          "ecosystem_detection_warning": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Warning emitted when GitHub ecosystem detection falls back to all-language patterns",
+            "readOnly": true
           }
         }
       },
@@ -951,6 +959,14 @@
                 "description": "RPM target package when pipeline_mode is rpm_package_checker",
                 "type": "object",
                 "$ref": "#/components/schemas/TargetPackage"
+              },
+              "ecosystem_detection_warning": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Warning emitted when GitHub ecosystem detection falls back to all-language patterns",
+                "readOnly": true
               }
             }
           },
