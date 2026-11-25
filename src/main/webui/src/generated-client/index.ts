@@ -15,6 +15,7 @@ export type { Eval } from './models/Eval';
 export type { FailedComponent } from './models/FailedComponent';
 export type { Feedback } from './models/Feedback';
 export type { FeedbackResponse } from './models/FeedbackResponse';
+export type { GitHubTokenStatus } from './models/GitHubTokenStatus';
 export type { Image } from './models/Image';
 export type { InlineCredential } from './models/InlineCredential';
 export type { Job } from './models/Job';
@@ -45,6 +46,7 @@ export type { VulnResult } from './models/VulnResult';
 
 export { CredentialsService } from './services/CredentialsService';
 export { FeedbackResourceService } from './services/FeedbackResourceService';
+export { GitHubTokenEndpointService } from './services/GitHubTokenEndpointService';
 export { MlOpsAudit1BatchResourceService } from './services/MlOpsAudit1BatchResourceService';
 export { MlOpsAudit2JobResourceService } from './services/MlOpsAudit2JobResourceService';
 export { MlOpsAudit3TraceResourceService } from './services/MlOpsAudit3TraceResourceService';
