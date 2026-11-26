@@ -19,8 +19,13 @@ import {
   ModalVariant,
   Form,
   Button,
+  Alert,
 } from "@patternfly/react-core";
 import { useAnalysisRequestForm } from "../../hooks/useAnalysisRequestForm";
+import {
+  shouldPollGitHubToken,
+  useGitHubTokenStatus,
+} from "../../hooks/useGitHubTokenStatus";
 import RequestAnalysisSubmitErrorAlerts from "./RequestAnalysisSubmitErrorAlerts";
 import RequestAnalysisModeToggle from "./RequestAnalysisModeToggle";
 import RequestAnalysisCveIdField from "./RequestAnalysisCveIdField";
@@ -42,6 +47,9 @@ interface RequestAnalysisModalProps {
  */
 const RequestAnalysisModal: React.FC<RequestAnalysisModalProps> = ({ onClose }) => {
   const { values, errors, state, handlers } = useAnalysisRequestForm({ onClose });
+  const { warning: githubTokenWarning } = useGitHubTokenStatus(
+    shouldPollGitHubToken(values),
+  );
 
   return (
     <Modal
@@ -57,6 +65,16 @@ const RequestAnalysisModal: React.FC<RequestAnalysisModalProps> = ({ onClose }) 
           sbomValidationIssues={errors.sbomValidationIssues}
           error={errors.error}
         />
+        {githubTokenWarning && (
+          <Alert
+            title="GitHub token warning"
+            variant="warning"
+            isInline
+            role="alert"
+          >
+            {githubTokenWarning}
+          </Alert>
+        )}
         <Form>
           <RequestAnalysisModeToggle
             mode={values.mode}

@@ -196,8 +196,9 @@ const RepositoryReportPage: React.FC = () => {
       return false;
     }
   })();
+  const isSourceAnalysis = image?.analysis_type === "source";
   const ecosystemDetectionWarning =
-    !isRpm && isGitHubRepository
+    !isRpm && isSourceAnalysis && isGitHubRepository
       ? image?.ecosystem_detection_warning
       : undefined;
   /** Terminal analysis failure: same UI as Finding "failed" (failed or expired; details in error.message). */
