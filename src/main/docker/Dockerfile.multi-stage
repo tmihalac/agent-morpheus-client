@@ -29,7 +29,7 @@ RUN curl -sSfL "https://github.com/anchore/syft/releases/download/v${SYFT_VERSIO
   && rm /tmp/syft.tar.gz
 
 ## Stage 2 : create the docker final image
-FROM registry.redhat.io/ubi10/ubi-minimal:1795002888
+FROM registry.redhat.io/ubi10/ubi-minimal:1795197047
 
 LABEL description="Red Hat ExploitIQ - UI"
 LABEL io.k8s.description="Red Hat ExploitIQ - UI"

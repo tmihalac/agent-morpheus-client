@@ -296,6 +296,30 @@
           }
         }
       },
+      "GitHubTokenStatus": {
+        "description": "Configured GitHub token status",
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "valid",
+              "invalid",
+              "unknown"
+            ]
+          },
+          "warning": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Non-blocking warning for an invalid or missing token"
+          }
+        }
+      },
       "Image": {
         "description": "Image data (required if SBOM is not provided)",
         "type": "object",
@@ -1357,6 +1381,9 @@
     {
       "name": "credentials",
       "description": "Credential retrieval operations for Agent callback"
+    },
+    {
+      "name": "GitHub Token Endpoint"
     }
   ],
   "paths": {
@@ -2646,6 +2673,32 @@
             "description": "Internal server error"
           }
         }
+      }
+    },
+    "/api/v1/github-token/status": {
+      "get": {
+        "summary": "Get configured GitHub token status",
+        "description": "Checks the configured GitHub token and returns status and warning only",
+        "responses": {
+          "200": {
+            "description": "Token status returned; token values are never included",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GitHubTokenStatus"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ],
+        "tags": [
+          "GitHub Token Endpoint"
+        ]
       }
     },
     "/api/v1/products": {

@@ -34,7 +34,7 @@ function repositoryReport(
     input: {
       scan: { id: "scan-1234" },
       image: {
-        analysis_type: "image",
+        analysis_type: "source",
         ecosystem: "",
         name: "example",
         tag: "latest",
@@ -103,6 +103,17 @@ describe("RepositoryReportPage ecosystem detection warning", () => {
 
   it("does not render a warning when the report image does not contain one", () => {
     renderPage(repositoryReport());
+
+    expect(screen.queryByText(warning)).toBeNull();
+  });
+
+  it("does not render a warning for image analysis", () => {
+    renderPage(
+      repositoryReport({
+        analysis_type: "image",
+        ecosystem_detection_warning: warning,
+      }),
+    );
 
     expect(screen.queryByText(warning)).toBeNull();
   });
